@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=60", "setuptools-scm>=8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EMITL2ARFL"
+version = "1.0.0"
+description = "EMIT L2A Estimated Surface Reflectance and Uncertainty and Masks 60 m Search and Download Utility"
+readme = "README.md"
+authors = [
+    { name = "Gregory H. Halverson", email = "gregory.h.halverson@jpl.nasa.gov" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "colored-logging",
+    "earthaccess",
+    "gdal",
+    "netCDF4",
+    "python-dateutil",
+    "rasters",
+    "rioxarray",
+    "spectral",
+    "xarray"
+]
+
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+]
+
+[tool.setuptools.package-data]
+EMITL2ARFL = ["*.txt"]
+
+[project.urls]
+"Homepage" = "https://github.com/STARS-Data-Fusion/EMITL2ARFL"
+
+[tool.setuptools.packages.find]
+include = ["EMITL2ARFL"]
+exclude = ["data", "build", "tests"]

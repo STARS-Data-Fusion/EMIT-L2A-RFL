@@ -1,7 +1,6 @@
 import netCDF4 as nc
 import os
 from spectral.io import envi
-from osgeo import gdal
 import numpy as np
 import math
 from skimage import io

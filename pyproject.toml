@@ -17,6 +17,7 @@ classifiers = [
 dependencies = [
     "colored-logging",
     "earthaccess",
+    "gdal",
     "geopandas",
     "netCDF4",
     "python-dateutil",

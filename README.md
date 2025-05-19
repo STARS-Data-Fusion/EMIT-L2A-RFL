@@ -6,6 +6,12 @@ Gregory H. Halverson (they/them)<br>
 [gregory.h.halverson@jpl.nasa.gov](mailto:gregory.h.halverson@jpl.nasa.gov)<br>
 NASA Jet Propulsion Laboratory 329G<br>
 
+## Installation
+
+```
+pip install EMITL2ARFL
+```
+
 ## References
 
 * Green, R. O., et al. (2023). Earth Surface Mineral Dust Source Investigation (EMIT) L2A Estimated Surface Reflectance and Uncertainty and Masks, Version 1. [Data set]. NASA EOSDIS Land Processes DAAC. [doi:10.5067/EMIT/EMITL2ARFL.001](https://doi.org/10.5067/EMIT/EMITL2ARFL.001)

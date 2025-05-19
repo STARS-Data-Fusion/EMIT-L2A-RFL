@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "EMITL2ARFL"
-version = "1.0.0"
+version = "1.1.0"
 description = "EMIT L2A Estimated Surface Reflectance and Uncertainty and Masks 60 m Search and Download Utility"
 readme = "README.md"
 authors = [
@@ -17,7 +17,6 @@ classifiers = [
 dependencies = [
     "colored-logging",
     "earthaccess",
-    "gdal",
     "geopandas",
     "netCDF4",
     "python-dateutil",

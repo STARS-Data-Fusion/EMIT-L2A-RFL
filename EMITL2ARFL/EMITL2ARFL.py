@@ -1,3 +1,4 @@
+from .version import __version__
 from .constants import *
 from .spatially_constrain_earthaccess_query import *
 from .temporally_constrain_earthaccess_query import *

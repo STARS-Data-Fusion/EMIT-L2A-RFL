@@ -3,6 +3,7 @@ from os.path import join, expanduser, abspath
 
 import earthaccess
 
+from .constants import *
 from .granule import EMITL2ARFL
 from .search_EMIT_L2A_RFL_granules import search_EMIT_L2A_RFL_granules
 
@@ -10,7 +11,7 @@ def retrieve_EMIT_L2A_RFL_granule(
         granule: earthaccess.search.DataGranule = None,
         orbit: int = None,
         scene: int = None, 
-        download_directory: str = ".") -> EMITL2ARFL:
+        download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFL:
     """
     Retrieve an EMIT L2A Reflectance granule.
 

@@ -1,7 +1,13 @@
+from typing import List
 import numpy as np
 import xarray as xr
 
-def quality_mask(filepath, quality_bands):
+from .constants import *
+
+def quality_mask(
+        filepath: str, 
+        quality_bands: List[str], 
+        engine: str = ENGINE):
     """
     This function builds a single layer mask to apply based on the bands selected from an EMIT L2A Mask file.
 
@@ -13,10 +19,12 @@ def quality_mask(filepath, quality_bands):
     qmask: a numpy array that can be used with the emit_xarray function to apply a quality mask.
     """
     # Open Dataset
-    mask_ds = xr.open_dataset(filepath, engine="h5netcdf")
+    mask_ds = xr.open_dataset(filepath, engine=ENGINE)
     # Open Sensor band Group
     mask_parameters_ds = xr.open_dataset(
-        filepath, engine="h5netcdf", group="sensor_band_parameters"
+        filepath, 
+        engine=engine, 
+        group="sensor_band_parameters"
     )
     # Print Flags used
     flags_used = mask_parameters_ds["mask_bands"].data[quality_bands]

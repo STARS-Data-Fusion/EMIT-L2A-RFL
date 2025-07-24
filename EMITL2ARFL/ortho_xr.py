@@ -19,7 +19,7 @@ def ortho_xr(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE, fil
     ortho_ds: an orthocorrected xarray dataset.
     """
     # extract GLT
-    GLT_array = extract_GLT(swath_ds)
+    GLT_array = extract_GLT(swath_ds=swath_ds)
 
     # List Variables
     var_list = list(swath_ds.data_vars)

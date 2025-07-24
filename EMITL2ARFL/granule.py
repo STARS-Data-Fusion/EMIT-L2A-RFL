@@ -1,10 +1,13 @@
 from glob import glob
 from os.path import join, abspath, dirname, expanduser
 
+import numpy as np
+
 from rasters import Raster, RasterGeometry
 
 from .emit_ortho_raster import emit_ortho_raster
 from .quality_mask import quality_mask
+from .extract_GLT import extract_GLT
 
 class EMITL2ARFL:
     def __init__(self, directory: str):
@@ -33,7 +36,10 @@ class EMITL2ARFL:
     def uncertainty_filename(self) -> str:
         return glob(join(self.directory_absolute, "*_RFLUNCERT_*.nc"))[0]
     
-    def quality_mask(self, geometry: RasterGeometry) -> Raster:
+    def GLT(self) -> np.ndarray:
+        return extract_GLT(swath_ds=self.reflectance_filename)
+
+    def quality_mask(self, geometry: RasterGeometry = None) -> Raster:
         raster = quality_mask(
             filepath=self.mask_filename,
             quality_bands=[0, 1, 2, 3, 4]
@@ -44,7 +50,7 @@ class EMITL2ARFL:
         
         return raster
 
-    def reflectance(self, geometry: RasterGeometry) -> Raster:
+    def reflectance(self, geometry: RasterGeometry = None) -> Raster:
         raster = emit_ortho_raster(
             filepath=self.reflectance_filename,
             layer_name="reflectance"

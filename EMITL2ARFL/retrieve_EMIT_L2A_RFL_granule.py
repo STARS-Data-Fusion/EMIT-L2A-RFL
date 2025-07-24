@@ -1,17 +1,17 @@
 import posixpath
-from os.path import join, expanduser, abspath
+from os.path import join, expanduser, abspath, exists
 
 import earthaccess
 
 from .constants import *
 from .granule import EMITL2ARFL
-from .search_EMIT_L2A_RFL_granules import search_EMIT_L2A_RFL_granules
+from .find_EMIT_L2A_RFL_granule import find_EMIT_L2A_RFL_granule
 
 def retrieve_EMIT_L2A_RFL_granule(
-        granule: earthaccess.search.DataGranule = None,
-        orbit: int = None,
-        scene: int = None, 
-        download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFL:
+    remote_granule: earthaccess.search.DataGranule = None,
+    orbit: int = None,
+    scene: int = None, 
+    download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFL:
     """
     Retrieve an EMIT L2A Reflectance granule.
 
@@ -31,29 +31,28 @@ def retrieve_EMIT_L2A_RFL_granule(
     Raises:
         ValueError: If no granule is found for the provided orbit and scene, or if the provided granule is not an EMIT L2A Reflectance collection 1 granule.
     """
-    if granule is None and orbit is not None and scene is not None:
-        remote_granules = search_EMIT_L2A_RFL_granules(orbit=orbit, scene=scene)
-        
-        if len(remote_granules) == 0:
-            raise ValueError(f"no EMIT L2A RFL granule found for orbit {orbit} and scene {scene}")
-        
-        granule = remote_granules[0]
+    if remote_granule is None and orbit is not None and scene is not None:
+        remote_granule = find_EMIT_L2A_RFL_granule(granule=remote_granule, orbit=orbit, scene=scene)
     
-    if granule is None:
-        raise ValueError("either granule or orbit and scene must be provided")  
+    if remote_granule is None:
+        raise ValueError("either granule or orbit and scene must be provided")
 
-    # parse granule ID
-    granule_ID = posixpath.splitext(posixpath.basename(granule.data_links()[0]))[0]
+    base_filenames = [posixpath.basename(URL) for URL in remote_granule.data_links()]
 
-    # make sure that this is an EMIT L2A Reflectance collection 1 granule
-    if not granule_ID.startswith("EMIT_L2A_RFL_001_"):
-        raise ValueError("The provided granule is not an EMIT L2A Reflectance collection 1 granule.")
+    if not all([exists(filename) for filename in base_filenames]):
+        # parse granule ID
+        granule_ID = posixpath.splitext(posixpath.basename(remote_granule.data_links()[0]))[0]
 
-    # create a subdirectory for the granule
-    directory = join(download_directory, granule_ID)
-    # download the granule files to the directory
-    earthaccess.download(granule.data_links(), local_path=abspath(expanduser(directory)))
+        # make sure that this is an EMIT L2A Reflectance collection 1 granule
+        if not granule_ID.startswith("EMIT_L2A_RFL_001_"):
+            raise ValueError("The provided granule is not an EMIT L2A Reflectance collection 1 granule.")
+
+        # create a subdirectory for the granule
+        directory = join(download_directory, granule_ID)
+        # download the granule files to the directory
+        earthaccess.download(remote_granule.data_links(), local_path=abspath(expanduser(directory)))
+
     # wrap the directory in an EMITL2ARFL object
-    granule = EMITL2ARFL(directory)
+    local_granule = EMITL2ARFL(directory)
 
-    return granule
+    return local_granule

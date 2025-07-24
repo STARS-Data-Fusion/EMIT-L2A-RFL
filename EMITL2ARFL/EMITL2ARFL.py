@@ -10,6 +10,6 @@ from .retrieve_EMIT_L2A_RFL_granule import *
 from .apply_geometry_lookup_table import *
 from .emit_ortho_raster import *
 from .emit_xarray import *
-from .extract_GLT import *
+from .extract_GLT_array import *
 from .ortho_xr import *
 from .get_pixel_center_coords import *

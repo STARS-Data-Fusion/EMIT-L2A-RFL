@@ -3,7 +3,7 @@ import xarray as xr
 
 from .constants import *
 
-def extract_GLT_array(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
+def extract_GLT_array(swath_dataset: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
     """
     Extracts the EMIT Geometry Lookup Table (GLT) index pairs from an xarray.Dataset or NetCDF file.
 
@@ -32,12 +32,12 @@ def extract_GLT_array(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_V
         Missing values are set to GLT_nodata_value.
     """
     # Step 1: If input is a filename, load the xarray.Dataset
-    if isinstance(swath_ds, str):
+    if isinstance(swath_dataset, str):
         # Local import to avoid circular import
         from .emit_xarray import emit_xarray
-        ds: xr.Dataset = emit_xarray(swath_ds, ortho=False)
+        ds: xr.Dataset = emit_xarray(swath_dataset, ortho=False)
     else:
-        ds: xr.Dataset = swath_ds
+        ds: xr.Dataset = swath_dataset
 
     # Step 2: Extract GLT x (column) and y (row) indices from the dataset
     # These arrays map each output pixel to its location in the original swath

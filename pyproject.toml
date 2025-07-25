@@ -20,7 +20,7 @@ dependencies = [
     "geopandas",
     "netCDF4",
     "python-dateutil",
-    "rasters>=1.5.3",
+    "rasters>=1.8.0",
     "rioxarray",
     "spectral",
     "xarray"

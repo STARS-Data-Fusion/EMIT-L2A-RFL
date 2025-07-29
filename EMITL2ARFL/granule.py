@@ -4,14 +4,20 @@ from typing import List
 
 import numpy as np
 
-import netCDF4
+
+
 
 from rasters import Raster, RasterGeometry, RasterGeolocation
+from .read_latitude import read_latitude
+from .read_longitude import read_longitude
+from .read_geolocation import read_geolocation
 
 from .constants import *
 from .emit_ortho_raster import emit_ortho_raster
 from .quality_mask import quality_mask
 from .extract_GLT_array import extract_GLT_array
+from .extract_GLT import extract_GLT
+from .GLT import GLT
 
 class EMITL2ARFL:
     def __init__(self, directory: str):
@@ -42,29 +48,18 @@ class EMITL2ARFL:
     
     @property
     def lat(self) -> np.ndarray:
-        # read the `lat` array from the `location` group in the reflectance NetCDF file    
-        with netCDF4.Dataset(self.reflectance_filename, "r") as ds:
-            lat = ds.groups["location"].variables["lat"][:]
-
-        return lat
+        return read_latitude(self.reflectance_filename)
     
     @property
     def lon(self) -> np.ndarray:
-        # read the `lon` array from the `location` group in the reflectance NetCDF file    
-        with netCDF4.Dataset(self.reflectance_filename, "r") as ds:
-            lon = ds.groups["location"].variables["lon"][:]
-
-        return lon
+        return read_longitude(self.reflectance_filename)
     
     @property
     def geolocation(self) -> RasterGeolocation:
-        return RasterGeolocation(
-            x=self.lon,
-            y=self.lat
-        )
+        return read_geolocation(self.reflectance_filename)
 
-    def GLT(self) -> Raster:
-        return Raster(extract_GLT_array(swath_ds=self.reflectance_filename), geometry=self.geolocation)
+    def GLT(self) -> GLT:
+        return extract_GLT(self.reflectance_filename)
 
     def quality_mask(self, quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
         qmask = quality_mask(

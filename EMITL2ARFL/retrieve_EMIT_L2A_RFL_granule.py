@@ -4,7 +4,7 @@ from os.path import join, expanduser, abspath, exists
 import earthaccess
 
 from .constants import *
-from .granule import EMITL2ARFLGranule
+from .EMITL2ARFLGranule import EMITL2ARFLGranule
 from .find_EMIT_L2A_RFL_granule import find_EMIT_L2A_RFL_granule
 
 def retrieve_EMIT_L2A_RFL_granule(

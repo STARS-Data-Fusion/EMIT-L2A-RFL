@@ -4,7 +4,7 @@ import numpy as np
 from rasterio.windows import Window
 from .read_netcdf_array import read_netcdf_array
 
-def read_longitude(filename: str, window: Optional[Window] = None) -> np.ndarray:
+def read_longitude_array(filename: str, window: Optional[Window] = None) -> np.ndarray:
     """
     Read the `lon` array from the `location` group in the reflectance NetCDF file.
 

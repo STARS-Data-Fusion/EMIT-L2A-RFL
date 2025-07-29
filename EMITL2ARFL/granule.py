@@ -6,10 +6,10 @@ import numpy as np
 
 from rasters import Raster, RasterGeometry, RasterGeolocation
 
-from .read_elevation import read_elevation
+from .read_netcdf_raster import read_netcdf_raster
 from .read_netcdf_array import read_netcdf_array
-from .read_latitude import read_latitude
-from .read_longitude import read_longitude
+from .read_latitude_array import read_latitude_array
+from .read_longitude_array import read_longitude_array
 from .read_geolocation import read_geolocation
 
 from .constants import *
@@ -21,41 +21,119 @@ from .GLT import GLT
 from .show_netcdf_tree import show_netcdf_tree
 
 class EMITNetCDF:
-    def __init__(self, filename: str):
-        self.filename = abspath(expanduser(filename))
+    def __init__(self, filename: str) -> None:
+        """
+        Initialize an EMITNetCDF object for a given NetCDF file.
+
+        Args:
+            filename (str): Path to the NetCDF file.
+        """
+        self.filename: str = abspath(expanduser(filename))
 
     def __repr__(self) -> str:
+        """
+        Return a string representation of the EMITNetCDF object.
+        """
         return f"EMITNetCDF(filename=\"{self.filename}\")"
 
-    def show_tree(self, indent=0) -> str:
+    def show_tree(self, indent: int = 0) -> str:
+        """
+        Show the NetCDF file structure as a tree.
+
+        Args:
+            indent (int, optional): Indentation level for the tree. Defaults to 0.
+
+        Returns:
+            str: String representation of the NetCDF file tree.
+        """
         return show_netcdf_tree(self.filename, indent)
     
     tree = property(show_tree)
 
     @property
     def lat(self) -> np.ndarray:
-        return read_latitude(self.filename)
+        """
+        Read the latitude array from the NetCDF file.
+
+        Returns:
+            np.ndarray: Latitude values.
+        """
+        return read_latitude_array(self.filename)
 
     @property
     def lon(self) -> np.ndarray:
-        return read_longitude(self.filename)
+        """
+        Read the longitude array from the NetCDF file.
+
+        Returns:
+            np.ndarray: Longitude values.
+        """
+        return read_longitude_array(self.filename)
 
     @property
     def geolocation(self) -> RasterGeolocation:
+        """
+        Read the geolocation information from the NetCDF file.
+
+        Returns:
+            RasterGeolocation: Geolocation object containing spatial info.
+        """
         return read_geolocation(self.filename)
     
     def extract_GLT(self) -> GLT:
+        """
+        Extract the Geometry Lookup Table (GLT) from the NetCDF file.
+
+        Returns:
+            GLT: Geometry Lookup Table object.
+        """
         return extract_GLT(self.filename)
 
     GLT = property(extract_GLT)
 
-    def read_elevation(self) -> np.ndarray:
-        return read_elevation(self.filename)
+    def read(self, group: str, variable: str):
+        """
+        Read a variable as a Raster object from a specified group in the NetCDF file.
+
+        Args:
+            group (str): Name of the group in the NetCDF file.
+            variable (str): Name of the variable to read.
+
+        Returns:
+            Raster: Raster object of the requested variable with geolocation.
+        """
+        return read_netcdf_raster(
+            filename=self.filename,
+            group=group,
+            variable=variable
+        )
+
+    def read_elevation(self) -> Raster:
+        """
+        Read the elevation raster from the NetCDF file.
+
+        Returns:
+            Raster: Elevation raster object.
+        """
+        return read_netcdf_raster(
+            filename=self.filename,
+            group="location",
+            variable="elev"
+        )
     
     elevation = property(read_elevation)
 
     def read_array(self, group: str, variable: str) -> np.ndarray:
-        """Read a variable array from a specified group in the NetCDF file."""
+        """
+        Read a variable array from a specified group in the NetCDF file.
+
+        Args:
+            group (str): Name of the group in the NetCDF file.
+            variable (str): Name of the variable to read.
+
+        Returns:
+            np.ndarray: Array of the requested variable.
+        """
         return read_netcdf_array(self.filename, group, variable)
 
 class EMITL2ARFLNetCDF(EMITNetCDF):
@@ -128,6 +206,9 @@ class EMITL2ARFLNetCDF(EMITNetCDF):
         glt_y: shape=(1886, 2298), dtype=int32
     """
     def __repr__(self) -> str:
+        """
+        Return a string representation of the EMITL2ARFLNetCDF object.
+        """
         return f"EMITL2ARFLNetCDF(\"{self.filename}\")"
 
 class EMITL2AMASKNetCDF(EMITNetCDF):
@@ -200,6 +281,9 @@ class EMITL2AMASKNetCDF(EMITNetCDF):
         glt_y: shape=(1886, 2298), dtype=int32
     """
     def __repr__(self) -> str:
+        """
+        Return a string representation of the EMITL2AMASKNetCDF object.
+        """
         return f"EMITL2AMASKNetCDF(\"{self.filename}\")"
 
 class EMITL2ARFLUNCERTNetCDF(EMITNetCDF):
@@ -272,60 +356,139 @@ class EMITL2ARFLUNCERTNetCDF(EMITNetCDF):
         glt_y: shape=(1886, 2298), dtype=int32
     """
     def __repr__(self) -> str:
+        """
+        Return a string representation of the EMITL2ARFLUNCERTNetCDF object.
+        """
         return f"EMITL2ARFLUNCERTNetCDF(\"{self.filename}\")"
 
-class EMITL2ARFL:
-    def __init__(self, reflectance_filename: str, mask_filename: str, uncertainty_filename: str):
-        self.reflectance_filename = abspath(expanduser(reflectance_filename))
-        self.mask_filename = abspath(expanduser(mask_filename))
-        self.uncertainty_filename = abspath(expanduser(uncertainty_filename))
+class EMITL2ARFLGranule:
+    def __init__(self, reflectance_filename: str, mask_filename: str, uncertainty_filename: str) -> None:
+        """
+        Initialize an EMITL2ARFL object for a set of EMIT L2A NetCDF files.
+
+        Args:
+            reflectance_filename (str): Path to the reflectance NetCDF file.
+            mask_filename (str): Path to the mask NetCDF file.
+            uncertainty_filename (str): Path to the uncertainty NetCDF file.
+        """
+        self.reflectance_filename: str = abspath(expanduser(reflectance_filename))
+        self.mask_filename: str = abspath(expanduser(mask_filename))
+        self.uncertainty_filename: str = abspath(expanduser(uncertainty_filename))
 
     def __repr__(self) -> str:
-        return f"EMITL2ARFL(reflectance_filename=\"{self.reflectance_filename}\", mask_filename=\"{self.mask_filename}\", uncertainty_filename=\"{self.uncertainty_filename}\")"
+        """
+        Return a string representation of the EMITL2ARFL object.
+        """
+        return (f"EMITL2ARFL(reflectance_filename=\"{self.reflectance_filename}\", "
+                f"mask_filename=\"{self.mask_filename}\", "
+                f"uncertainty_filename=\"{self.uncertainty_filename}\")")
 
     @property
     def reflectance_netcdf(self) -> EMITL2ARFLNetCDF:
+        """
+        Get the EMITL2ARFLNetCDF object for the reflectance file.
+
+        Returns:
+            EMITL2ARFLNetCDF: Object for reflectance NetCDF file.
+        """
         return EMITL2ARFLNetCDF(self.reflectance_filename)
 
     @property
     def mask_netcdf(self) -> EMITL2AMASKNetCDF:
+        """
+        Get the EMITL2AMASKNetCDF object for the mask file.
+
+        Returns:
+            EMITL2AMASKNetCDF: Object for mask NetCDF file.
+        """
         return EMITL2AMASKNetCDF(self.mask_filename)
 
     @property
     def uncertainty_netcdf(self) -> EMITL2ARFLUNCERTNetCDF:
+        """
+        Get the EMITL2ARFLUNCERTNetCDF object for the uncertainty file.
+
+        Returns:
+            EMITL2ARFLUNCERTNetCDF: Object for uncertainty NetCDF file.
+        """
         return EMITL2ARFLUNCERTNetCDF(self.uncertainty_filename)
 
     @property
     def lat(self) -> np.ndarray:
+        """
+        Get the latitude array from the reflectance NetCDF file.
+
+        Returns:
+            np.ndarray: Latitude values.
+        """
         return self.reflectance_netcdf.lat
 
     @property
     def lon(self) -> np.ndarray:
+        """
+        Get the longitude array from the reflectance NetCDF file.
+
+        Returns:
+            np.ndarray: Longitude values.
+        """
         return self.reflectance_netcdf.lon
 
     @property
     def geolocation(self) -> RasterGeolocation:
+        """
+        Get the geolocation object from the reflectance NetCDF file.
+
+        Returns:
+            RasterGeolocation: Geolocation object.
+        """
         return self.reflectance_netcdf.geolocation
 
     def extract_GLT(self) -> GLT:
+        """
+        Extract the Geometry Lookup Table (GLT) from the reflectance NetCDF file.
+
+        Returns:
+            GLT: Geometry Lookup Table object.
+        """
         return self.reflectance_netcdf.extract_GLT()
 
     GLT = property(extract_GLT)
 
     def quality_mask(self, quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
-        qmask = quality_mask(
+        """
+        Generate a quality mask from the mask NetCDF file for the specified bands.
+
+        Args:
+            quality_bands (List[int], optional): List of quality band indices. Defaults to QUALITY_BANDS.
+
+        Returns:
+            np.ndarray: Quality mask array.
+        """
+        qmask: np.ndarray = quality_mask(
             filepath=self.mask_filename,
             quality_bands=quality_bands
         )
         return qmask
 
     def reflectance(self, geometry: RasterGeometry = None) -> Raster:
-        qmask = self.quality_mask()
-        raster = emit_ortho_raster(
+        """
+        Get the reflectance raster, optionally reprojected to a given geometry.
+
+        Args:
+            geometry (RasterGeometry, optional): Target geometry for reprojection. Defaults to None.
+
+        Returns:
+            Raster: Reflectance raster object.
+        """
+        # Generate a quality mask for filtering bad pixels
+        qmask: np.ndarray = self.quality_mask()
+        # Create the reflectance raster, applying the quality mask
+        raster: Raster = emit_ortho_raster(
             filepath=self.reflectance_filename,
             layer_name="reflectance",
             qmask=qmask
         )
+        # Optionally reproject to the specified geometry
         if geometry is not None:
             raster = raster.to_geometry(geometry)
         return raster

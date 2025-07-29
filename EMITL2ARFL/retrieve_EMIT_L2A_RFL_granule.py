@@ -4,14 +4,14 @@ from os.path import join, expanduser, abspath, exists
 import earthaccess
 
 from .constants import *
-from .granule import EMITL2ARFL
+from .granule import EMITL2ARFLGranule
 from .find_EMIT_L2A_RFL_granule import find_EMIT_L2A_RFL_granule
 
 def retrieve_EMIT_L2A_RFL_granule(
         remote_granule: earthaccess.search.DataGranule = None,
         orbit: int = None,
         scene: int = None, 
-        download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFL:
+        download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFLGranule:
     """
     Retrieve an EMIT L2A Reflectance granule.
 
@@ -74,7 +74,7 @@ def retrieve_EMIT_L2A_RFL_granule(
     if missing_files:
         raise FileNotFoundError(f"The following required files do not exist: {missing_files}")
 
-    local_granule = EMITL2ARFL(
+    local_granule = EMITL2ARFLGranule(
         reflectance_filename=reflectance_filename,
         mask_filename=mask_filename,
         uncertainty_filename=uncertainty_filename

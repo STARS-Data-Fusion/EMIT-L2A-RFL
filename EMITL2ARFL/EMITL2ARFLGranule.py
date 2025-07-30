@@ -55,15 +55,19 @@ class EMITL2ARFLGranule:
             filepath=self.mask_filename,
             quality_bands=quality_bands
         )
+        
         return qmask
 
     def reflectance(self, geometry: RasterGeometry = None) -> Raster:
         qmask: np.ndarray = self.quality_mask()
+
         raster: Raster = emit_ortho_raster(
             filepath=self.reflectance_filename,
             layer_name="reflectance",
             qmask=qmask
         )
+
         if geometry is not None:
             raster = raster.to_geometry(geometry)
+
         return raster

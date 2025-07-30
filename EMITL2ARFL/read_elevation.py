@@ -43,7 +43,7 @@ def read_elevation(filename: str, window: Optional[Window] = None) -> np.ndarray
     """
     return read_netcdf_array(
         filename=filename,
-        group="location",
         variable="elev",
+        group="location",
         window=window
     )

@@ -21,7 +21,7 @@ def read_latitude_array(filename: str, window: Optional[Window] = None) -> np.nd
     """
     return read_netcdf_array(
         filename=filename,
-        group="location",
         variable="lat",
+        group="location",
         window=window
     )

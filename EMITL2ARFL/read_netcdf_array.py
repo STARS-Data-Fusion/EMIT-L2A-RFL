@@ -6,19 +6,19 @@ from rasterio.windows import Window
 
 def read_netcdf_array(
     filename: str,
-    group: str,
     variable: str,
+    group: Optional[str] = None,
     window: Optional[Window] = None
 ) -> np.ndarray:
     """
-    Read a variable array from a specified group in a NetCDF file.
+    Read a variable array from a specified group or the root in a NetCDF file.
 
     Parameters
     ----------
     filename : str
         Path to the NetCDF file to read from.
-    group : str
-        Name of the group within the NetCDF file containing the variable.
+    group : Optional[str], default None
+        Name of the group within the NetCDF file containing the variable. If None, reads from the root of the NetCDF data structure (global scope).
     variable : str
         Name of the variable to read from the group.
     window : Optional[rasterio.windows.Window], default None
@@ -39,8 +39,11 @@ def read_netcdf_array(
     """
     # Open the NetCDF file for reading
     with netCDF4.Dataset(filename, "r") as ds:
-        # Access the specified group and variable
-        var = ds.groups[group].variables[variable]
+        # Access the specified group and variable, or root if group is None
+        if group is None:
+            var = ds.variables[variable]
+        else:
+            var = ds.groups[group].variables[variable]
         if window is not None:
             # Ensure the window object has the required attributes
             # (row_off, col_off, height, width)

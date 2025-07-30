@@ -1,6 +1,13 @@
+from typing import List, Dict, Optional
+from rasterio.windows import Window
+
 from os.path import abspath, expanduser
 import numpy as np
+
+import netCDF4
+
 from rasters import Raster, RasterGeolocation
+
 from .read_netcdf_raster import read_netcdf_raster
 from .read_netcdf_array import read_netcdf_array
 from .read_latitude_array import read_latitude_array
@@ -84,51 +91,116 @@ class EMITNetCDF:
 
     GLT = property(extract_GLT)
 
-    def read(self, group: str, variable: str) -> Raster:
+    def read(
+        self,
+        variable: str,
+        group: str = None,
+        geometry: Optional[RasterGeolocation] = None,
+        window: Optional[Window] = None,
+        resampling: str = "nearest"
+    ) -> Raster:
         """
-        Read a variable as a Raster object from a specified group in the NetCDF file.
+        Read a variable as a Raster object from a specified group in the NetCDF file, supporting spatial subsetting.
 
         Args:
-            group (str): Name of the group in the NetCDF file.
             variable (str): Name of the variable to read.
+            group (str, optional): Name of the group in the NetCDF file. If None (default),
+                the variable is read from the root of the NetCDF data structure (global scope).
+            geometry (RasterGeolocation, optional): Spatial geometry for subsetting. Ignored if window is provided.
+            window (rasterio.windows.Window, optional): Spatial window for subsetting. If provided, only the subset is read. Takes precedence over geometry.
+            resampling (str, optional): Resampling method if geometry is provided. Defaults to "nearest".
 
         Returns:
-            Raster: Raster object of the requested variable with geolocation.
+            Raster: Raster object of the requested variable with geolocation, optionally spatially subsetted.
         """
         return read_netcdf_raster(
             filename=self.filename,
+            variable=variable,
             group=group,
-            variable=variable
+            geometry=geometry,
+            window=window,
+            resampling=resampling
         )
 
-    def read_elevation(self) -> Raster:
+    def read_elevation(
+        self,
+        geometry: Optional[RasterGeolocation] = None,
+        window: Optional[Window] = None,
+        resampling: str = "nearest"
+    ) -> Raster:
         """
-        Read the elevation raster from the NetCDF file.
+        Read the elevation raster from the NetCDF file, with optional spatial subsetting.
+
+        Args:
+            geometry (RasterGeolocation, optional): Spatial geometry for subsetting. Ignored if window is provided.
+            window (rasterio.windows.Window, optional): Spatial window for subsetting. If provided, only the subset is read. Takes precedence over geometry.
+            resampling (str, optional): Resampling method if geometry is provided. Defaults to "nearest".
 
         Returns:
-            Raster: Elevation raster object.
+            Raster: Elevation raster object, optionally spatially subsetted.
         """
         return read_netcdf_raster(
             filename=self.filename,
+            variable="elev",
             group="location",
-            variable="elev"
+            geometry=geometry,
+            window=window,
+            resampling=resampling
         )
     
     elevation = property(read_elevation)
 
-    def read_array(self, group: str, variable: str) -> np.ndarray:
+    def read_array(self, variable: str, group: str) -> np.ndarray:
         """
         Read a variable array from a specified group in the NetCDF file.
 
         Args:
-            group (str): Name of the group in the NetCDF file.
             variable (str): Name of the variable to read.
+            group (str): Name of the group in the NetCDF file.
 
         Returns:
             np.ndarray: Array of the requested variable.
         """
         return read_netcdf_array(
             filename=self.filename,
-            group=group,
-            variable=variable
+            variable=variable,
+            group=group
         )
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        """
+        Return a dictionary of global NetCDF file attributes (ncattrs).
+
+        Returns:
+            dict: Dictionary of attribute names and their values.
+        """
+        with netCDF4.Dataset(self.filename, 'r') as ds:
+            return {attr: ds.getncattr(attr) for attr in ds.ncattrs()}
+    
+    @property
+    def groups(self) -> List[str]:
+        """
+        List all groups in the NetCDF file.
+
+        Returns:
+            List[str]: List of group names.
+        """
+        with netCDF4.Dataset(self.filename, 'r') as ds:
+            return list(ds.groups.keys())
+        
+    def variables(self, group: str = None) -> List[str]:
+        """
+        List all variables in the NetCDF file or a specific group.
+
+        Args:
+            group (str, optional): Name of the group to list variables from. Defaults to None (global scope).
+
+        Returns:
+            List[str]: List of variable names.
+        """
+        with netCDF4.Dataset(self.filename, 'r') as ds:
+            if group is None:
+                return list(ds.variables.keys())
+            else:
+                return list(ds.groups[group].variables.keys())

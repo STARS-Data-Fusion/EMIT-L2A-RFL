@@ -1,22 +1,23 @@
 import xarray as xr
+from rasterio.windows import Window
 
-from .read_geolocation import read_geolocation
+from .extract_grid import extract_grid
+
 from .extract_GLT_array import extract_GLT_array
-from .GLT import GLT
+from .GLT import GeometryLookupTable
 from .emit_xarray import emit_xarray
 from .constants import GLT_NODATA_VALUE
 
-def extract_GLT(swath_dataset: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE):
+def extract_GLT(
+        filename: str,
+        window: Window = None,
+        GLT_nodata_value: int = GLT_NODATA_VALUE):
     """
-    Wrapper function to extract a GLT object from a dataset or filename.
+    Wrapper function to extract a GLT object from a NetCDF file.
     """
-    # If input is a filename, load the xarray.Dataset
-    if isinstance(swath_dataset, str):
-        ds: xr.Dataset = emit_xarray(swath_dataset, ortho=False)
-    else:
-        ds: xr.Dataset = swath_dataset
+    GLT_array = extract_GLT_array(filename, GLT_nodata_value=GLT_nodata_value, window=window)
+    grid = extract_grid(filename, window=window)
 
-    GLT_array = extract_GLT_array(ds, GLT_nodata_value)
-    geolocation = read_geolocation(swath_dataset)
+    # a GLT is a grid of swath indices that needs to be georeferenced as a grid
 
-    return GLT(GLT_array=GLT_array, geolocation=geolocation)
+    return GeometryLookupTable(GLT_array=GLT_array, geometry=grid)

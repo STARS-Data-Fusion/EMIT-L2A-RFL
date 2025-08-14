@@ -1,14 +1,17 @@
 from os.path import abspath, expanduser
 from typing import List
 import numpy as np
+
+from rasterio.windows import Window
+
 from .EMITL2ARFLNetCDF import EMITL2ARFLNetCDF
 from .EMITL2AMASKNetCDF import EMITL2AMASKNetCDF
 from .EMITL2ARFLUNCERTNetCDF import EMITL2ARFLUNCERTNetCDF
 from .constants import QUALITY_BANDS
 from .quality_mask import quality_mask
 from .emit_ortho_raster import emit_ortho_raster
-from rasters import Raster, RasterGeometry, RasterGeolocation
-from .GLT import GLT
+from rasters import Raster, RasterGeometry, RasterGeolocation, RasterGrid
+from .GLT import GeometryLookupTable
 
 class EMITL2ARFLGranule:
     def __init__(self, reflectance_filename: str, mask_filename: str, uncertainty_filename: str) -> None:
@@ -44,9 +47,13 @@ class EMITL2ARFLGranule:
     @property
     def geolocation(self) -> RasterGeolocation:
         return self.reflectance_netcdf.geolocation
+    
+    @property
+    def grid(self) -> RasterGrid:
+        return self.reflectance_netcdf.grid
 
-    def extract_GLT(self) -> GLT:
-        return self.reflectance_netcdf.extract_GLT()
+    def extract_GLT(self, window: Window = None) -> GeometryLookupTable:
+        return self.reflectance_netcdf.extract_GLT(window=window)
 
     GLT = property(extract_GLT)
 

@@ -1,4 +1,5 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
+from affine import Affine
 from rasterio.windows import Window
 
 from os.path import abspath, expanduser
@@ -6,7 +7,7 @@ import numpy as np
 
 import netCDF4
 
-from rasters import Raster, RasterGeolocation
+from rasters import Raster, RasterGeolocation, RasterGrid
 
 from .read_netcdf_raster import read_netcdf_raster
 from .read_netcdf_array import read_netcdf_array
@@ -14,8 +15,9 @@ from .read_latitude_array import read_latitude_array
 from .read_longitude_array import read_longitude_array
 from .read_geolocation import read_geolocation
 from .extract_GLT import extract_GLT
-from .GLT import GLT
+from .GLT import GeometryLookupTable
 from .show_netcdf_tree import show_netcdf_tree
+from .read_dimensions import read_dimensions
 
 class EMITNetCDF:
     """
@@ -29,6 +31,7 @@ class EMITNetCDF:
             filename (str): Path to the NetCDF file.
         """
         self.filename: str = abspath(expanduser(filename))
+        self._metadata: Dict[str, Union[str, int, float]] = None
 
     def __repr__(self) -> str:
         """
@@ -80,14 +83,25 @@ class EMITNetCDF:
         """
         return read_geolocation(self.filename)
     
-    def extract_GLT(self) -> GLT:
+    @property
+    def affine(self) -> Affine:
+        geotransform = self.metadata["geotransform"]
+        affine = Affine.from_gdal(geotransform)
+
+        return affine
+
+    @property
+    def grid(self) -> RasterGrid:
+        pass
+    
+    def extract_GLT(self, window: Window = None) -> GeometryLookupTable:
         """
         Extract the Geometry Lookup Table (GLT) from the NetCDF file.
 
         Returns:
             GLT: Geometry Lookup Table object.
         """
-        return extract_GLT(self.filename)
+        return extract_GLT(self.filename, window=window)
 
     GLT = property(extract_GLT)
 
@@ -150,7 +164,7 @@ class EMITNetCDF:
     
     elevation = property(read_elevation)
 
-    def read_array(self, variable: str, group: str) -> np.ndarray:
+    def read_array(self, variable: str, group: str = None, window: Window = None) -> np.ndarray:
         """
         Read a variable array from a specified group in the NetCDF file.
 
@@ -164,19 +178,23 @@ class EMITNetCDF:
         return read_netcdf_array(
             filename=self.filename,
             variable=variable,
-            group=group
+            group=group,
+            window=window
         )
 
     @property
     def metadata(self) -> Dict[str, str]:
         """
-        Return a dictionary of global NetCDF file attributes (ncattrs).
+        Return a dictionary of global NetCDF file attributes (ncattrs), cached after first read.
 
         Returns:
             dict: Dictionary of attribute names and their values.
         """
-        with netCDF4.Dataset(self.filename, 'r') as ds:
-            return {attr: ds.getncattr(attr) for attr in ds.ncattrs()}
+        if self._metadata is None:
+            with netCDF4.Dataset(self.filename, 'r') as ds:
+                self._metadata = {attr: ds.getncattr(attr) for attr in ds.ncattrs()}
+
+        return self._metadata
     
     @property
     def groups(self) -> List[str]:
@@ -204,3 +222,49 @@ class EMITNetCDF:
                 return list(ds.variables.keys())
             else:
                 return list(ds.groups[group].variables.keys())
+    
+    @property
+    def dimensions(self) -> dict[str, int]:
+        """
+        Return a dictionary of dimension names and their sizes from the NetCDF file.
+
+        Returns:
+            dict[str, int]: Dictionary where keys are dimension names and values are sizes.
+        """
+        return read_dimensions(self.filename)
+
+    @property
+    def downtrack(self) -> int:
+        """
+        Return the downtrack size from dimensions.
+        """
+        return int(self.dimensions['downtrack'])
+
+    @property
+    def crosstrack(self) -> int:
+        """
+        Return the crosstrack size from dimensions.
+        """
+        return int(self.dimensions['crosstrack'])
+
+    @property
+    def bands(self) -> int:
+        """
+        Return the bands size from dimensions.
+        """
+        return int(self.dimensions['bands'])
+
+    @property
+    def ortho_y(self) -> int:
+        """
+        Return the ortho_y size from dimensions.
+        """
+        return int(self.dimensions['ortho_y'])
+
+    @property
+    def ortho_x(self) -> int:
+        """
+        Return the ortho_x size from dimensions.
+        """
+        return int(self.dimensions['ortho_x'])
+    

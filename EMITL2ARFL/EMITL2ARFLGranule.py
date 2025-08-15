@@ -80,28 +80,35 @@ class EMITL2ARFLGranule:
             self, 
             geometry: RasterGeometry = None,
             window: Window = None) -> Raster:
-        processing_subset = geometry is not None or window is not None
-
-        scene_grid = self.reflectance_netcdf.grid
-
-        if processing_subset:
-            if window is None and geometry is not None:
-                window = scene_grid.window(geometry)
-            
-            if geometry is None:
-                geometry = scene_grid.subset(window)
-
-        qmask: np.ndarray = self.quality_mask()
-
-        raster: Raster = emit_ortho_raster(
-            filepath=self.reflectance_filename,
+        return emit_ortho_raster(
+            filename=self.reflectance_filename,
             layer_name="reflectance",
-            qmask=qmask,
             geometry=geometry,
             window=window
         )
 
-        if processing_subset:
-            raster = raster.to_geometry(geometry)
+        # processing_subset = geometry is not None or window is not None
+
+        # scene_grid = self.reflectance_netcdf.grid
+
+        # if processing_subset:
+        #     if window is None and geometry is not None:
+        #         window = scene_grid.window(geometry)
+            
+        #     if geometry is None:
+        #         geometry = scene_grid.subset(window)
+
+        # qmask: np.ndarray = self.quality_mask(window=window)
+
+        # raster: Raster = emit_ortho_raster(
+        #     filename=self.reflectance_filename,
+        #     layer_name="reflectance",
+        #     # qmask=qmask,
+        #     geometry=geometry,
+        #     window=window
+        # )
+
+        # if processing_subset:
+        #     raster = raster.to_geometry(geometry)
 
         return raster

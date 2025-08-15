@@ -67,10 +67,10 @@ def apply_GLT(
     #    - zero_based_indices[..., 0] gives swath row indices
     #    - valid_GLT mask selects only valid mappings
     col_indices = zero_based_indices[valid_GLT, 1]
-    # print(f"col indices shape: {col_indices.shape} min: {np.nanmin(col_indices)} max: {np.nanmax(col_indices)}")
+    print(f"col indices shape: {col_indices.shape} min: {np.nanmin(col_indices)} max: {np.nanmax(col_indices)}")
     row_indices = zero_based_indices[valid_GLT, 0]
-    # print(f"row indices shape: {row_indices.shape} min: {np.nanmin(row_indices)} max: {np.nanmax(row_indices)}")
-    # print(f"swath_array shape: {swath_array.shape}")
+    print(f"row indices shape: {row_indices.shape} min: {np.nanmin(row_indices)} max: {np.nanmax(row_indices)}")
+    print(f"swath_array shape: {swath_array.shape}")
 
     ortho_array[valid_GLT, :] = swath_array[row_indices, col_indices, :]
 

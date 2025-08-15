@@ -1,9 +1,13 @@
 import numpy as np
 import xarray as xr
+from rasterio.windows import Window
 
 from .constants import *
 
-def extract_GLT_array_from_dataset(swath_dataset: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
+def extract_GLT_array_from_dataset(
+        swath_dataset: xr.Dataset, 
+        swath_window: Window = None,
+        GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
     """
     Extracts the EMIT Geometry Lookup Table (GLT) index pairs from an xarray.Dataset or NetCDF file.
 
@@ -35,7 +39,11 @@ def extract_GLT_array_from_dataset(swath_dataset: xr.Dataset, GLT_nodata_value: 
     if isinstance(swath_dataset, str):
         # Local import to avoid circular import
         from .emit_xarray import emit_xarray
-        ds: xr.Dataset = emit_xarray(swath_dataset, ortho=False)
+        ds: xr.Dataset = emit_xarray(
+            swath_dataset, 
+            swath_window=swath_window,
+            ortho=False
+        )
     else:
         ds: xr.Dataset = swath_dataset
 

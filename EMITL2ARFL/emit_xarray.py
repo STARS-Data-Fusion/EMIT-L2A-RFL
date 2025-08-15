@@ -12,7 +12,7 @@ import rioxarray as rxr
 import s3fs
 from rioxarray.merge import merge_arrays
 from fsspec.implementations.http import HTTPFile
-
+from rasterio.windows import Window
 from os.path import join, expanduser
 
 from .constants import *
@@ -21,6 +21,8 @@ from .ortho_xr import ortho_xr
 def emit_xarray(
     filepath: str, 
     ortho: bool = False, 
+    swath_window: Window = None,
+    GLT_array: np.ndarray = None,
     qmask: np.ndarray = None, 
     unpacked_bmask: np.ndarray = None, 
     fill_value: int = FILL_VALUE,
@@ -53,8 +55,20 @@ def emit_xarray(
 
     # load swath dataset to xarray
     ds = xr.open_dataset(filepath, engine=engine)
+    # If window is provided, slice the swath dataset accordingly
+    if swath_window is not None:
+        # window: rasterio.windows.Window
+        # Slicing assumes dimensions are [downtrack, crosstrack]
+        row_start = int(swath_window.row_off)
+        row_end = row_start + int(swath_window.height)
+        col_start = int(swath_window.col_off)
+        col_end = col_start + int(swath_window.width)
+        # Slice all variables with downtrack/crosstrack dims
+        ds = ds.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end))
     # load location dataset to xarray
     loc = xr.open_dataset(filepath, engine=engine, group="location")
+    if swath_window is not None:
+        loc = loc.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end))
 
     # Check if mineral dataset and read in groups (only ds/loc for minunc)
 
@@ -117,7 +131,12 @@ def emit_xarray(
     # orthorectify the swath cube if the ortho flag is set
     if ortho is True:
         # orthorectify the swath cube to a grid cube
-        out_xr = ortho_xr(out_xr, fill_value=fill_value)
+        out_xr = ortho_xr(
+            out_xr, 
+            swath_window=swath_window,
+            GLT_array=GLT_array,
+            fill_value=fill_value
+        )
         # set `Orthorectified` attribute to True
         out_xr.attrs["Orthorectified"] = "True"
 

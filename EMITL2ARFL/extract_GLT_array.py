@@ -1,9 +1,14 @@
 import numpy as np
 import xarray as xr
+from rasterio.windows import Window
 
 from .constants import *
+from .read_netcdf_array import read_netcdf_array
 
-def extract_GLT_array(swath_dataset: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
+def extract_GLT_array(
+        filename: str,
+        window: Window = None,
+        GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
     """
     Extracts the EMIT Geometry Lookup Table (GLT) index pairs from an xarray.Dataset or NetCDF file.
 
@@ -31,18 +36,31 @@ def extract_GLT_array(swath_dataset: xr.Dataset, GLT_nodata_value: int = GLT_NOD
         Array of shape (latitude, longitude, 2) with GLT index pairs (row, column), dtype=int.
         Missing values are set to GLT_nodata_value.
     """
-    # Step 1: If input is a filename, load the xarray.Dataset
-    if isinstance(swath_dataset, str):
-        # Local import to avoid circular import
-        from .emit_xarray import emit_xarray
-        ds: xr.Dataset = emit_xarray(swath_dataset, ortho=False)
-    else:
-        ds: xr.Dataset = swath_dataset
+    # # Step 1: If input is a filename, load the xarray.Dataset
+    # if isinstance(swath_dataset, str):
+    #     # Local import to avoid circular import
+    #     from .emit_xarray import emit_xarray
+    #     ds: xr.Dataset = emit_xarray(swath_dataset, ortho=False)
+    # else:
+    #     ds: xr.Dataset = swath_dataset
 
-    # Step 2: Extract GLT x (column) and y (row) indices from the dataset
-    # These arrays map each output pixel to its location in the original swath
-    GLT_x: np.ndarray = ds["glt_x"].data  # swath column indices
-    GLT_y: np.ndarray = ds["glt_y"].data  # swath row indices
+    # # Step 2: Extract GLT x (column) and y (row) indices from the dataset
+    # # These arrays map each output pixel to its location in the original swath
+    # GLT_x: np.ndarray = ds["glt_x"].data  # swath column indices
+    # GLT_y: np.ndarray = ds["glt_y"].data  # swath row indices
+    GLT_x = read_netcdf_array(
+        filename=filename,
+        variable="glt_x", 
+        group="location",
+        window=window
+    )
+
+    GLT_y = read_netcdf_array(
+        filename=filename,
+        variable="glt_y", 
+        group="location",
+        window=window
+    )
 
     # Step 3: Stack row and column indices into a single array of shape (latitude, longitude, 2)
     # The last dimension holds (row, column) pairs for each output pixel: (row, column) = (glt_y, glt_x)

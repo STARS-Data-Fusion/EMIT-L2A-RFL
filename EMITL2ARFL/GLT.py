@@ -35,17 +35,15 @@ class GeometryLookupTable(np.ndarray):
     @property
     def rows(self) -> Raster:
         """
-        Returns the 1-based row indices (glt_y) as a Raster object with geometry.
+        Returns the zero-based row indices (glt_y) as a Raster object with geometry.
         Each value is a row index into the swath/geolocated array.
         """
-        return Raster(self[..., 0], geometry=self.geometry)
+        return Raster(self[..., 0] - 1, geometry=self.geometry)
 
     @property
     def cols(self) -> Raster:
         """
-        Returns the 1-based column indices (glt_x) as a Raster object with geometry.
+        Returns the zero-based column indices (glt_x) as a Raster object with geometry.
         Each value is a column index into the swath/geolocated array.
         """
-        return Raster(self[..., 1], geometry=self.geometry)
-    
-    
+        return Raster(self[..., 1] - 1, geometry=self.geometry)

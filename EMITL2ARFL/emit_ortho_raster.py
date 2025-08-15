@@ -1,6 +1,8 @@
 import numpy as np
 from affine import Affine
 import rasters as rt
+from rasters import RasterGeometry
+from rasterio.windows import Window
 
 from .constants import *
 from .emit_xarray import emit_xarray
@@ -8,6 +10,8 @@ from .emit_xarray import emit_xarray
 def emit_ortho_raster(
         filepath: str, 
         layer_name: str,
+        geometry: RasterGeometry = None,
+        window: Window = None,
         qmask: np.ndarray = None, 
         unpacked_bmask: np.ndarray = None, 
         fill_value: int = FILL_VALUE,

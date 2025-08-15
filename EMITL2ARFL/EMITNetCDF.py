@@ -7,7 +7,7 @@ import numpy as np
 
 import netCDF4
 
-from rasters import Raster, RasterGeolocation, RasterGrid
+from rasters import Raster, RasterGeolocation, RasterGrid, RasterGeometry
 
 from .read_netcdf_raster import read_netcdf_raster
 from .read_netcdf_array import read_netcdf_array
@@ -94,14 +94,21 @@ class EMITNetCDF:
     def grid(self) -> RasterGrid:
         pass
     
-    def extract_GLT(self, window: Window = None) -> GeometryLookupTable:
+    def extract_GLT(
+            self, 
+            geometry: RasterGeometry = None,
+            window: Window = None) -> GeometryLookupTable:
         """
         Extract the Geometry Lookup Table (GLT) from the NetCDF file.
 
         Returns:
             GLT: Geometry Lookup Table object.
         """
-        return extract_GLT(self.filename, window=window)
+        return extract_GLT(
+            filename=self.filename, 
+            geometry=geometry, 
+            window=window
+        )
 
     GLT = property(extract_GLT)
 

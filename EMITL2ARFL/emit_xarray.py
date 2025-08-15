@@ -19,12 +19,13 @@ from .constants import *
 from .ortho_xr import ortho_xr
 
 def emit_xarray(
-        filepath: str, 
-        ortho: bool = False, 
-        qmask: np.ndarray = None, 
-        unpacked_bmask: np.ndarray = None, 
-        fill_value: int = FILL_VALUE,
-        engine: str = ENGINE):
+    filepath: str, 
+    ortho: bool = False, 
+    qmask: np.ndarray = None, 
+    unpacked_bmask: np.ndarray = None, 
+    fill_value: int = FILL_VALUE,
+    engine: str = ENGINE
+) -> xr.Dataset:
     """
     Load an EMIT NetCDF dataset as an xarray.Dataset.
 

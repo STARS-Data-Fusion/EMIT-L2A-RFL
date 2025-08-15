@@ -52,29 +52,56 @@ class EMITL2ARFLGranule:
     def grid(self) -> RasterGrid:
         return self.reflectance_netcdf.grid
 
-    def extract_GLT(self, window: Window = None) -> GeometryLookupTable:
-        return self.reflectance_netcdf.extract_GLT(window=window)
+    def extract_GLT(
+            self, 
+            geometry: RasterGeometry = None,
+            window: Window = None
+            ) -> GeometryLookupTable:
+        return self.reflectance_netcdf.extract_GLT(
+            geometry=geometry, 
+            window=window
+        )
 
     GLT = property(extract_GLT)
 
-    def quality_mask(self, quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
+    def quality_mask(
+            self, 
+            window: Window = None,
+            quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
         qmask: np.ndarray = quality_mask(
             filepath=self.mask_filename,
+            window=window,
             quality_bands=quality_bands
         )
         
         return qmask
 
-    def reflectance(self, geometry: RasterGeometry = None) -> Raster:
+    def reflectance(
+            self, 
+            geometry: RasterGeometry = None,
+            window: Window = None) -> Raster:
+        processing_subset = geometry is not None or window is not None
+
+        scene_grid = self.reflectance_netcdf.grid
+
+        if processing_subset:
+            if window is None and geometry is not None:
+                window = scene_grid.window(geometry)
+            
+            if geometry is None:
+                geometry = scene_grid.subset(window)
+
         qmask: np.ndarray = self.quality_mask()
 
         raster: Raster = emit_ortho_raster(
             filepath=self.reflectance_filename,
             layer_name="reflectance",
-            qmask=qmask
+            qmask=qmask,
+            geometry=geometry,
+            window=window
         )
 
-        if geometry is not None:
+        if processing_subset:
             raster = raster.to_geometry(geometry)
 
         return raster

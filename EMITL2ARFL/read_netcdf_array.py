@@ -56,4 +56,7 @@ def read_netcdf_array(
         else:
             # Read the entire variable array
             arr = var[:]
+    # If the array has 3 dimensions, transpose from (rows, cols, bands) to (bands, rows, cols)
+    if arr.ndim == 3:
+        arr = np.transpose(arr, (2, 0, 1))
     return arr

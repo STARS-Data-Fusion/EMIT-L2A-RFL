@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 from rasterio.windows import Window
 import rasters as rt
-from rasters import Raster, RasterGeometry
+from rasters import Raster, MultiRaster, RasterGeometry
 from .read_netcdf_array import read_netcdf_array
 from .read_geolocation import read_geolocation
 
@@ -11,7 +11,7 @@ def read_netcdf_raster(
     variable: str,
     group: Optional[str] = None,
     geometry: Optional[RasterGeometry] = None,
-    window: Optional[Window] = None,
+    swath_window: Optional[Window] = None,
     resampling: str = "nearest"
 ) -> Raster:
     """
@@ -38,26 +38,29 @@ def read_netcdf_raster(
         The requested data as a Raster object with geolocation, optionally spatially subsetted.
     """
     # If a window is not provided but a geometry is, compute the window from the geometry
-    if window is None and geometry is not None:
+    if swath_window is None and geometry is not None:
         # read the scene geolocation
         geolocation = read_geolocation(filename=filename)
 
         # calculate the indices window that covers the target geometry
-        window = geolocation.window(geometry)
+        swath_window = geolocation.window(geometry)
 
     # Read the data array from the NetCDF file, using the window if provided
     array = read_netcdf_array(
         filename=filename,
         variable=variable,
         group=group,
-        window=window
+        window=swath_window
     )
 
     # Read the geolocation, using the same window for spatial alignment
-    geolocation = read_geolocation(filename, window=window)
+    geolocation = read_geolocation(filename, window=swath_window)
+
+    print("array.shape", array.shape)
+    print("geolocation.shape", geolocation.shape)
 
     # Wrap the data array and geolocation in a Raster object
-    raster = Raster(array, geometry=geolocation)
+    raster = MultiRaster(array, geometry=geolocation)
 
     # If a geometry is provided, reproject or resample the raster to match the geometry
     if geometry is not None:

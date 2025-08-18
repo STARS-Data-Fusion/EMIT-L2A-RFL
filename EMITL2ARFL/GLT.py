@@ -44,6 +44,12 @@ class GeometryLookupTable(np.ndarray):
         else:
             self.GLT_nodata_value = GLT_NODATA_VALUE
 
+    def __repr__(self):
+        return f"GeometryLookupTable(shape={self.shape}, min_row={self.min_row}, max_row={self.max_row}, min_col={self.min_col}, max_col={self.max_col})"
+
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def rows(self) -> Raster:
         """
@@ -111,3 +117,39 @@ class GeometryLookupTable(np.ndarray):
             width=self.max_col - self.min_col + 1,
             height=self.max_row - self.min_row + 1
         )
+    
+    def adjust_indices(self, window: Window) -> "GeometryLookupTable":
+        """
+        Adjusts the GLT indices based on a provided window.
+        This is useful when subsetting the GLT to a specific region.
+        
+        Parameters:
+            window (Window): The window to adjust indices by.
+        
+        Returns:
+            GeometryLookupTable: A new GLT with adjusted indices.
+        """
+        if window is None:
+            return self
+
+        adjusted_array = self.copy()
+        mask = (adjusted_array[..., 0] != self.GLT_nodata_value) & (adjusted_array[..., 1] != self.GLT_nodata_value)
+        adjusted_array[..., 0][mask] -= int(window.row_off)
+        adjusted_array[..., 1][mask] -= int(window.col_off)
+
+        # Calculate bounds for the swath window
+        swath_height = int(window.height)
+        swath_width = int(window.width)
+        max_row = int(np.nanmax(adjusted_array[..., 0][mask])) - 1 if np.any(mask) else -1
+        max_col = int(np.nanmax(adjusted_array[..., 1][mask])) - 1 if np.any(mask) else -1
+
+        if max_row >= swath_height or max_col >= swath_width:
+            raise ValueError(
+                f"Adjusted GLT indices are out of bounds for the swath window: "
+                f"max_row={max_row}, max_col={max_col}, "
+                f"swath_height={swath_height}, swath_width={swath_width}, "
+                f"window(row_off={window.row_off}, col_off={window.col_off}, height={window.height}, width={window.width})"
+            )
+
+        return GeometryLookupTable(GLT_array=adjusted_array, geometry=self.geometry, GLT_nodata_value=self.GLT_nodata_value)
+    

@@ -8,10 +8,11 @@ from .EMITL2ARFLNetCDF import EMITL2ARFLNetCDF
 from .EMITL2AMASKNetCDF import EMITL2AMASKNetCDF
 from .EMITL2ARFLUNCERTNetCDF import EMITL2ARFLUNCERTNetCDF
 from .constants import QUALITY_BANDS
-from .quality_mask import quality_mask
+from .read_qmask import read_qmask
 from .emit_ortho_raster import emit_ortho_raster
 from rasters import Raster, RasterGeometry, RasterGeolocation, RasterGrid
 from .GLT import GeometryLookupTable
+from .read_netcdf_raster import read_netcdf_raster
 
 class EMITL2ARFLGranule:
     def __init__(self, reflectance_filename: str, mask_filename: str, uncertainty_filename: str) -> None:
@@ -68,7 +69,7 @@ class EMITL2ARFLGranule:
             self, 
             window: Window = None,
             quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
-        qmask: np.ndarray = quality_mask(
+        qmask: np.ndarray = read_qmask(
             filepath=self.mask_filename,
             window=window,
             quality_bands=quality_bands
@@ -80,12 +81,18 @@ class EMITL2ARFLGranule:
             self, 
             geometry: RasterGeometry = None,
             window: Window = None) -> Raster:
-        return emit_ortho_raster(
+        return read_netcdf_raster(
             filename=self.reflectance_filename,
-            layer_name="reflectance",
-            geometry=geometry,
-            window=window
+            variable="reflectance",
+            geometry=geometry
         )
+    
+        # return emit_ortho_raster(
+        #     filename=self.reflectance_filename,
+        #     layer_name="reflectance",
+        #     geometry=geometry,
+        #     grid_window=window
+        # )
 
         # processing_subset = geometry is not None or window is not None
 
@@ -111,4 +118,4 @@ class EMITL2ARFLGranule:
         # if processing_subset:
         #     raster = raster.to_geometry(geometry)
 
-        return raster
+        # return raster

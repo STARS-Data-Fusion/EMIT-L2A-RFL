@@ -8,6 +8,7 @@ from .read_netcdf_array import read_netcdf_array
 def extract_GLT_array(
         filename: str,
         window: Window = None,
+        adjust_indices: bool = False,
         GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
     """
     Extracts the EMIT Geometry Lookup Table (GLT) index pairs from an xarray.Dataset or NetCDF file.
@@ -69,5 +70,13 @@ def extract_GLT_array(
         nan=GLT_nodata_value
     ).astype(int)
 
-    # Step 4: Return the GLT array, ready for use in geospatial orthorectification
+    # Step 4: Optionally adjust indices if requested
+    if adjust_indices and window is not None:
+        # window.col_off and window.row_off are the offsets for the subset
+        # Only adjust non-nodata values
+        mask = (GLT_array[..., 0] != GLT_nodata_value) & (GLT_array[..., 1] != GLT_nodata_value)
+        GLT_array[..., 0][mask] -= int(window.row_off)
+        GLT_array[..., 1][mask] -= int(window.col_off)
+
+    # Step 5: Return the GLT array, ready for use in geospatial orthorectification
     return GLT_array

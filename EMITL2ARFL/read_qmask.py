@@ -5,7 +5,7 @@ from rasterio.windows import Window
 
 from .constants import *
 
-def quality_mask(
+def read_qmask(
         filepath: str, 
         window: Window = None,
         quality_bands: List[str] = QUALITY_BANDS, 

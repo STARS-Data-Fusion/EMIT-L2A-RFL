@@ -17,12 +17,15 @@ from os.path import join, expanduser
 
 from .constants import *
 from .ortho_xr import ortho_xr
+from .extract_GLT_array import extract_GLT_array
 
 def emit_xarray(
-    filepath: str, 
+    filename: str, 
     ortho: bool = False, 
     swath_window: Window = None,
+    grid_window: Window = None,
     GLT_array: np.ndarray = None,
+    adjusted_GLT: np.ndarray = None,
     qmask: np.ndarray = None, 
     unpacked_bmask: np.ndarray = None, 
     fill_value: int = FILL_VALUE,
@@ -43,32 +46,29 @@ def emit_xarray(
     """
     # Grab granule filename to check product
 
-    if type(filepath) == s3fs.core.S3File:
-        granule_id = filepath.info()["name"].split("/", -1)[-1].split(".", -1)[0]
-    elif type(filepath) == HTTPFile:
-        granule_id = filepath.path.split("/", -1)[-1].split(".", -1)[0]
+    if type(filename) == s3fs.core.S3File:
+        granule_id = filename.info()["name"].split("/", -1)[-1].split(".", -1)[0]
+    elif type(filename) == HTTPFile:
+        granule_id = filename.path.split("/", -1)[-1].split(".", -1)[0]
     else:
-        granule_id = os.path.splitext(os.path.basename(filepath))[0]
+        granule_id = os.path.splitext(os.path.basename(filename))[0]
 
     # Read in Data as Xarray Datasets
     wvl_group = None
 
-    # load swath dataset to xarray
-    ds = xr.open_dataset(filepath, engine=engine)
-    # If window is provided, slice the swath dataset accordingly
+    # load swath dataset to xarray with lazy loading
+    ds = xr.open_dataset(filename, engine=engine, chunks={})
     if swath_window is not None:
-        # window: rasterio.windows.Window
         # Slicing assumes dimensions are [downtrack, crosstrack]
         row_start = int(swath_window.row_off)
         row_end = row_start + int(swath_window.height)
         col_start = int(swath_window.col_off)
         col_end = col_start + int(swath_window.width)
-        # Slice all variables with downtrack/crosstrack dims
-        ds = ds.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end))
-    # load location dataset to xarray
-    loc = xr.open_dataset(filepath, engine=engine, group="location")
+        ds = ds.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end)).load()
+    # load location dataset to xarray with lazy loading
+    loc = xr.open_dataset(filename, engine=engine, group="location", chunks={})
     if swath_window is not None:
-        loc = loc.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end))
+        loc = loc.isel(downtrack=slice(row_start, row_end), crosstrack=slice(col_start, col_end)).load()
 
     # Check if mineral dataset and read in groups (only ds/loc for minunc)
 
@@ -80,7 +80,7 @@ def emit_xarray(
     wvl = None
 
     if wvl_group:
-        wvl = xr.open_dataset(filepath, engine=engine, group=wvl_group)
+        wvl = xr.open_dataset(filename, engine=engine, group=wvl_group)
 
     # Building Flat Dataset from Components
     data_vars = {**ds.variables}
@@ -130,11 +130,17 @@ def emit_xarray(
 
     # orthorectify the swath cube if the ortho flag is set
     if ortho is True:
+        # If GLT_array is not provided, extract and slice it from the NetCDF file
+        if GLT_array is None:
+            GLT_array, adjusted_GLT, swath_window = extract_GLT_array(
+                filename=filename, 
+                window=grid_window,
+                adjust_indices=True
+            )
         # orthorectify the swath cube to a grid cube
         out_xr = ortho_xr(
-            out_xr, 
-            swath_window=swath_window,
-            GLT_array=GLT_array,
+            out_xr,
+            GLT_array=adjusted_GLT,
             fill_value=fill_value
         )
         # set `Orthorectified` attribute to True

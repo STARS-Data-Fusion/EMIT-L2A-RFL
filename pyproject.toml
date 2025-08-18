@@ -24,7 +24,8 @@ dependencies = [
     "rasters>=1.8.0",
     "rioxarray",
     "spectral",
-    "xarray"
+    "xarray",
+    "dask"
 ]
 
 requires-python = ">=3.10"

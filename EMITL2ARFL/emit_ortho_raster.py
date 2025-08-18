@@ -14,8 +14,10 @@ def emit_ortho_raster(
         filename: str, 
         layer_name: str,
         geometry: RasterGeometry = None,
-        window: Window = None,
+        grid_window: Window = None,
         GLT: GeometryLookupTable = None,
+        adjusted_GLT: GeometryLookupTable = None,
+        swath_window: Window = None,
         qmask: np.ndarray = None, 
         unpacked_bmask: np.ndarray = None, 
         fill_value: int = FILL_VALUE,
@@ -33,34 +35,39 @@ def emit_ortho_raster(
     Returns:
     raster.Raster object containing the orthorectified EMIT data layer
     """
-    processing_subset = geometry is not None or window is not None
+    processing_subset = geometry is not None or grid_window is not None
 
     scene_grid = extract_grid(filename=filename)
 
     if processing_subset:
-        if processing_subset:
-            if window is None and geometry is not None:
-                window = scene_grid.window(geometry)
-            
-            if geometry is None:
-                geometry = scene_grid.subset(window)
+        if grid_window is None and geometry is not None:
+            grid_window = scene_grid.window(geometry)
+        
+        if geometry is None:
+            geometry = scene_grid.subset(grid_window)
+
+        # FIXME need to generate swath window from grid window based on GLT
+        if GLT is None or adjusted_GLT is None or swath_window is None:
+            GLT, adjusted_GLT, swath_window = extract_GLT(
+                filename=filename,
+                window=grid_window,
+                GLT_nodata_value=GLT_nodata_value
+            )
+
+            print("scene_grid.shape:", scene_grid.shape)
+            print("GLT", GLT)
+            print("Adjusted GLT:", adjusted_GLT)
+
     else:
         geometry = scene_grid
 
-    # FIXME need to generate swath window from grid window based on GLT
-    if GLT is None:
-        GLT = extract_GLT(
-            filename=filename,
-            window=window,
-            GLT_nodata_value=GLT_nodata_value
-        )
-
-    swath_window = GLT.swath_window
-
     ortho_ds = emit_xarray(
-        filepath=filename,
+        filename=filename,
         ortho=True,
         swath_window=swath_window,
+        grid_window=grid_window,
+        GLT_array=GLT,
+        adjusted_GLT=adjusted_GLT,
         qmask=qmask,
         unpacked_bmask=unpacked_bmask,
         fill_value=fill_value,

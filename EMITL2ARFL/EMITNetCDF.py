@@ -139,7 +139,7 @@ class EMITNetCDF:
             variable=variable,
             group=group,
             geometry=geometry,
-            window=window,
+            swath_window=window,
             resampling=resampling
         )
 
@@ -165,7 +165,7 @@ class EMITNetCDF:
             variable="elev",
             group="location",
             geometry=geometry,
-            window=window,
+            swath_window=window,
             resampling=resampling
         )
     

@@ -45,4 +45,24 @@ def extract_GLT(
 
     GLT = GeometryLookupTable(GLT_array=GLT_array, geometry=geometry)
 
-    return GLT
+    if processing_subset:
+        adjusted_GLT = GLT.adjust_indices(window)
+        swath_window: Window = GLT.swath_window
+
+        # calculate the row/col shape of the subset defined by the swath_window Window object
+        swath_shape = (swath_window.height, swath_window.width)
+
+        # check that the maximum row/col indices in the adjusted GLT are within the swath shape
+        if adjusted_GLT is not None:
+            if adjusted_GLT.max_row >= swath_shape[0] or adjusted_GLT.max_col >= swath_shape[1]:
+                raise ValueError(
+                    f"Adjusted GLT indices are out of bounds for the swath shape: "
+                    f"max_row={adjusted_GLT.max_row}, max_col={adjusted_GLT.max_col}, "
+                    f"swath_shape={swath_shape}"
+                )
+
+    else:
+        adjusted_GLT = None
+        swath_window = None
+
+    return GLT, adjusted_GLT, swath_window

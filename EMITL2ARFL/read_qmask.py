@@ -6,7 +6,7 @@ from rasterio.windows import Window
 from .constants import *
 
 def read_qmask(
-        filepath: str, 
+        filename: str, 
         window: Window = None,
         quality_bands: List[str] = QUALITY_BANDS, 
         engine: str = ENGINE) -> np.ndarray:
@@ -21,11 +21,11 @@ def read_qmask(
     qmask: a numpy array that can be used with the emit_xarray function to apply a quality mask.
     """
     # Open Dataset
-    mask_ds = xr.open_dataset(filepath, engine=ENGINE)
+    mask_ds = xr.open_dataset(filename, engine=ENGINE)
 
     # Open Sensor band Group
     mask_parameters_ds = xr.open_dataset(
-        filepath,
+        filename,
         engine=engine,
         group="sensor_band_parameters"
     )
@@ -36,6 +36,7 @@ def read_qmask(
     # Check for data bands and build mask
     if any(x in quality_bands for x in [5, 6]):
         err_str = f"Selected flags include a data band (5 or 6) not just flag bands"
+        
         raise AttributeError(err_str)
     else:
         if window is not None:
@@ -48,6 +49,7 @@ def read_qmask(
             )
         else:
             qmask = np.sum(mask_ds["mask"][:, :, quality_bands].values, axis=-1)
+
         qmask[qmask > 1] = 1
 
     return qmask

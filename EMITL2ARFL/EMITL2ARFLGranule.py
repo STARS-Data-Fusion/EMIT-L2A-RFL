@@ -13,6 +13,7 @@ from .emit_ortho_raster import emit_ortho_raster
 from rasters import Raster, RasterGeometry, RasterGeolocation, RasterGrid
 from .GLT import GeometryLookupTable
 from .read_netcdf_raster import read_netcdf_raster
+from .read_geolocation import read_geolocation
 
 class EMITL2ARFLGranule:
     def __init__(self, reflectance_filename: str, mask_filename: str, uncertainty_filename: str) -> None:
@@ -70,7 +71,7 @@ class EMITL2ARFLGranule:
             window: Window = None,
             quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
         qmask: np.ndarray = read_qmask(
-            filepath=self.mask_filename,
+            filename=self.mask_filename,
             window=window,
             quality_bands=quality_bands
         )
@@ -80,12 +81,27 @@ class EMITL2ARFLGranule:
     def reflectance(
             self, 
             geometry: RasterGeometry = None,
-            window: Window = None) -> Raster:
-        return read_netcdf_raster(
+            swath_window: Window = None,
+            qmask: np.ndarray = None) -> Raster:
+            # If a window is not provided but a geometry is, compute the window from the geometry
+        if swath_window is None and geometry is not None:
+            # read the scene geolocation
+            geolocation = read_geolocation(filename=self.reflectance_filename)
+
+        # calculate the indices window that covers the target geometry
+        swath_window = geolocation.window(geometry)
+
+        qmask = self.quality_mask(window=swath_window)
+
+        result = read_netcdf_raster(
             filename=self.reflectance_filename,
             variable="reflectance",
-            geometry=geometry
+            geometry=geometry,
+            swath_window=swath_window,
+            qmask=qmask
         )
+
+        return result
     
         # return emit_ortho_raster(
         #     filename=self.reflectance_filename,
@@ -96,7 +112,7 @@ class EMITL2ARFLGranule:
 
         # processing_subset = geometry is not None or window is not None
 
-        # scene_grid = self.reflectance_netcdf.grid
+        # scene_grid = self.reflectance_netcdf.grid  
 
         # if processing_subset:
         #     if window is None and geometry is not None:

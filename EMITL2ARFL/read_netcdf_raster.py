@@ -1,10 +1,16 @@
+from typing import List
+
 import numpy as np
 from typing import Optional
 from rasterio.windows import Window
 import rasters as rt
 from rasters import Raster, MultiRaster, RasterGeometry
+
+from .constants import *
 from .read_netcdf_array import read_netcdf_array
 from .read_geolocation import read_geolocation
+from .read_qmask import read_qmask
+from .apply_qmask import apply_qmask
 
 def read_netcdf_raster(
     filename: str,
@@ -12,6 +18,7 @@ def read_netcdf_raster(
     group: Optional[str] = None,
     geometry: Optional[RasterGeometry] = None,
     swath_window: Optional[Window] = None,
+    qmask: Optional[np.ndarray] = None,
     resampling: str = "nearest"
 ) -> Raster:
     """
@@ -53,11 +60,12 @@ def read_netcdf_raster(
         window=swath_window
     )
 
+    if qmask is not None:
+        # apply qmask to data array
+        array = apply_qmask(array=array, qmask=qmask)
+
     # Read the geolocation, using the same window for spatial alignment
     geolocation = read_geolocation(filename, window=swath_window)
-
-    print("array.shape", array.shape)
-    print("geolocation.shape", geolocation.shape)
 
     # Wrap the data array and geolocation in a Raster object
     raster = MultiRaster(array, geometry=geolocation)

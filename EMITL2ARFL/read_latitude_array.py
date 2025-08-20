@@ -1,0 +1,27 @@
+from typing import Optional
+import numpy as np
+from rasterio.windows import Window
+from .read_netcdf_array import read_netcdf_array
+
+def read_latitude_array(filename: str, window: Optional[Window] = None) -> np.ndarray:
+    """
+    Read the `lat` array from the `location` group in the reflectance NetCDF file.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the NetCDF file.
+    window : Optional[Window], default None
+        If provided, only the subset defined by the window will be read.
+
+    Returns
+    -------
+    np.ndarray
+        The latitude array or its subset.
+    """
+    return read_netcdf_array(
+        filename=filename,
+        variable="lat",
+        group="location",
+        window=window
+    )

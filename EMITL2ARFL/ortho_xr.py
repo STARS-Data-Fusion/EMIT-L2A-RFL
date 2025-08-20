@@ -1,12 +1,17 @@
 import numpy as np
 import xarray as xr
+from rasterio.windows import Window
 
 from .constants import *
-from .extract_GLT_array import extract_GLT_array
+from .extract_GLT_array_from_dataset import extract_GLT_array_from_dataset
 from .apply_geometry_lookup_table import apply_GLT
 from .get_pixel_center_coords import get_pixel_center_coords
 
-def ortho_xr(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE, fill_value: int = FILL_VALUE) -> xr.Dataset:
+def ortho_xr(
+    swath_ds: xr.Dataset,
+    GLT_array: np.ndarray = None,
+    GLT_nodata_value: int = GLT_NODATA_VALUE,
+    fill_value: int = FILL_VALUE) -> xr.Dataset:
     """
     This function uses `apply_GLT` to create an orthorectified xarray dataset.
 
@@ -18,8 +23,9 @@ def ortho_xr(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE, fil
     Returns:
     ortho_ds: an orthocorrected xarray dataset.
     """
-    # extract GLT
-    GLT_array = extract_GLT_array(swath_dataset=swath_ds)
+    if GLT_array is None:
+        # extract GLT
+        GLT_array = extract_GLT_array_from_dataset(swath_dataset=swath_ds)
 
     # List Variables
     var_list = list(swath_ds.data_vars)
@@ -37,9 +43,13 @@ def ortho_xr(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE, fil
         swath_dimensions = swath_ds[var].dims
 
         # Apply GLT to dataset
-        out_ds = apply_GLT(swath_array, GLT_array, GLT_nodata_value=GLT_nodata_value)
+        out_ds = apply_GLT(
+            swath_array, 
+            GLT_array, 
+            GLT_nodata_value=GLT_nodata_value
+        )
 
-        # Update variables - Only works for 2 or 3 dimensional arays
+        # Update variables - Only works for 2 or 3 dimensional arrays
         if swath_array.ndim == 2:
             out_ds = out_ds.squeeze()
             data_vars[var] = (["latitude", "longitude"], out_ds)
@@ -49,10 +59,12 @@ def ortho_xr(swath_ds: xr.Dataset, GLT_nodata_value: int = GLT_NODATA_VALUE, fil
         del swath_array
 
     # Calculate Lat and Lon Vectors
-    lon, lat = get_pixel_center_coords(swath_ds)  # Reorder this function to make sense in case of multiple variables
+    lon, lat = get_pixel_center_coords(swath_ds)
 
     # Apply GLT to elevation
-    elev_ds = apply_GLT(swath_ds["elev"].data, GLT_array, fill_value=fill_value)
+    elev_array = swath_ds["elev"].data
+
+    elev_ds = apply_GLT(elev_array, GLT_array, fill_value=fill_value)
 
     # Delete glt_ds - no longer needed
     del GLT_array

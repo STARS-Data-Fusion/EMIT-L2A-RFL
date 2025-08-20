@@ -4,14 +4,14 @@ from os.path import join, expanduser, abspath, exists
 import earthaccess
 
 from .constants import *
-from .granule import EMITL2ARFL
+from .EMITL2ARFLGranule import EMITL2ARFLGranule
 from .find_EMIT_L2A_RFL_granule import find_EMIT_L2A_RFL_granule
 
 def retrieve_EMIT_L2A_RFL_granule(
-    remote_granule: earthaccess.search.DataGranule = None,
-    orbit: int = None,
-    scene: int = None, 
-    download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFL:
+        remote_granule: earthaccess.search.DataGranule = None,
+        orbit: int = None,
+        scene: int = None, 
+        download_directory: str = DOWNLOAD_DIRECTORY) -> EMITL2ARFLGranule:
     """
     Retrieve an EMIT L2A Reflectance granule.
 
@@ -52,7 +52,32 @@ def retrieve_EMIT_L2A_RFL_granule(
         # download the granule files to the directory
         earthaccess.download(remote_granule.data_links(), local_path=abspath(expanduser(directory)))
 
-    # wrap the directory in an EMITL2ARFL object
-    local_granule = EMITL2ARFL(directory)
+    # Use base_filenames to determine the local filenames for RFL, MASK, and RFLUNCERT
+    if 'directory' not in locals():
+        granule_ID = posixpath.splitext(posixpath.basename(remote_granule.data_links()[0]))[0]
+        directory = join(download_directory, granule_ID)
+
+    abs_directory = abspath(expanduser(directory))
+
+    # Map the base filenames to their full local paths
+    local_files = [join(abs_directory, fname) for fname in base_filenames]
+    reflectance_filename = next((f for f in local_files if '_RFL_' in f and not '_RFLUNCERT_' in f), None)
+    mask_filename = next((f for f in local_files if '_MASK_' in f), None)
+    uncertainty_filename = next((f for f in local_files if '_RFLUNCERT_' in f), None)
+
+    if not (reflectance_filename and mask_filename and uncertainty_filename):
+        raise FileNotFoundError('Could not find all required NetCDF files (RFL, MASK, RFLUNCERT) in the granule directory.')
+
+    # Check that each file exists on disk
+    missing_files = [f for f in [reflectance_filename, mask_filename, uncertainty_filename] if not exists(f)]
+
+    if missing_files:
+        raise FileNotFoundError(f"The following required files do not exist: {missing_files}")
+
+    local_granule = EMITL2ARFLGranule(
+        reflectance_filename=reflectance_filename,
+        mask_filename=mask_filename,
+        uncertainty_filename=uncertainty_filename
+    )
 
     return local_granule

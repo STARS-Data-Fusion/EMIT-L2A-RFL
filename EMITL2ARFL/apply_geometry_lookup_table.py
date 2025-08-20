@@ -1,10 +1,13 @@
+from typing import Union
+
 import numpy as np
 
 from .constants import *
+from .GLT import GeometryLookupTable
 
 def apply_GLT(
             swath_array: np.ndarray, 
-            GLT_array: np.ndarray, 
+            GLT: np.ndarray, 
             fill_value: int = FILL_VALUE, 
             GLT_nodata_value: int = GLT_NODATA_VALUE) -> np.ndarray:
     """
@@ -34,9 +37,8 @@ def apply_GLT(
     Raises:
             ValueError: If input array dimensions are incompatible or GLT last dimension is not size 2.
     """
-
     # 1. Validate GLT shape: must be (latitude, longitude, 2) for geospatial mapping
-    if GLT_array.ndim not in [2, 3] or (GLT_array.ndim == 3 and GLT_array.shape[-1] != 2):
+    if GLT.ndim not in [2, 3] or (GLT.ndim == 3 and GLT.shape[-1] != 2):
         raise ValueError("GLT_array must be 2D or 3D with the last dimension of size 2.")
 
     # 2. Ensure swath_array is 3D for consistent band handling
@@ -45,7 +47,7 @@ def apply_GLT(
         swath_array = swath_array[:, :, np.newaxis]
 
     # 3. Prepare output array shape: (latitude, longitude, bands)
-    latitude_length, longitude_length = GLT_array.shape[:2]
+    latitude_length, longitude_length = GLT.shape[:2]
     band_length = swath_array.shape[-1]
     ortho_array_shape = (latitude_length, longitude_length, band_length)
 
@@ -54,17 +56,23 @@ def apply_GLT(
 
     # 5. Identify valid GLT entries (where both row and col indices are not nodata)
     #    valid_GLT is a 2D boolean mask of shape (latitude, longitude)
-    valid_GLT = np.all(GLT_array != GLT_nodata_value, axis=-1)
+    valid_GLT = np.all(GLT != GLT_nodata_value, axis=-1)
 
     # 6. Convert GLT indices from 1-based to 0-based (Python convention)
-    zero_based_indices = GLT_array - 1
+    zero_based_indices = GLT - 1
 
     # 7. For each valid output pixel, copy the corresponding swath data using GLT indices
     #    This remaps swath_array values to their georeferenced locations in ortho_array
-    #    - zero_based_indices[..., 0] gives swath column indices
-    #    - zero_based_indices[..., 1] gives swath row indices
+    #    - zero_based_indices[..., 1] gives swath column indices
+    #    - zero_based_indices[..., 0] gives swath row indices
     #    - valid_GLT mask selects only valid mappings
-    ortho_array[valid_GLT, :] = swath_array[zero_based_indices[valid_GLT, 1], zero_based_indices[valid_GLT, 0], :]
+    col_indices = zero_based_indices[valid_GLT, 1]
+    print(f"col indices shape: {col_indices.shape} min: {np.nanmin(col_indices)} max: {np.nanmax(col_indices)}")
+    row_indices = zero_based_indices[valid_GLT, 0]
+    print(f"row indices shape: {row_indices.shape} min: {np.nanmin(row_indices)} max: {np.nanmax(row_indices)}")
+    print(f"swath_array shape: {swath_array.shape}")
+
+    ortho_array[valid_GLT, :] = swath_array[row_indices, col_indices, :]
 
     # 8. Replace any fill value of -9999 with np.nan for easier downstream analysis
     ortho_array = np.where(ortho_array == -9999, np.nan, ortho_array)

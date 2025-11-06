@@ -3,6 +3,8 @@ import numpy as np
 import xarray as xr
 from rasterio.windows import Window
 
+from rasters import RasterGeometry
+
 from .constants import *
 
 def read_qmask(

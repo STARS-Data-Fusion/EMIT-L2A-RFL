@@ -11,6 +11,7 @@ from .extract_GLT import *
 from .extract_GLT_array import *
 from .find_EMIT_L2A_RFL_granule import *
 from .generate_earthaccess_query import *
+from .generate_EMIT_L2A_RFL_timeseries import *
 from .get_pixel_center_coords import *
 from .GLT import *
 from .ortho_xr import *
@@ -20,6 +21,7 @@ from .read_latitude_array import *
 from .read_longitude_array import *
 from .read_netcdf_array import *
 from .read_netcdf_raster import *
+from .retrieve_EMIT_L2A_RFL import *
 from .retrieve_EMIT_L2A_RFL_granule import *
 from .search_EMIT_L2A_RFL_granules import *
 from .search_earthaccess_granules import *

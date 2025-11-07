@@ -34,6 +34,7 @@ def generate_EMIT_L2A_RFL_timeseries(
         
         if exists(abspath(expanduser(output_filename))):
             logger.info(f"output file already exists: {output_filename}")
+            filenames.append(output_filename)
             continue
         
         try:

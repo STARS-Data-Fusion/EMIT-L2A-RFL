@@ -1,8 +1,11 @@
 from os.path import abspath, expanduser
-from typing import List
+from typing import List, Union
 import numpy as np
 
 from rasterio.windows import Window
+
+import rasters as rt
+from rasters import Raster, RasterGeometry, RasterGeolocation, RasterGrid
 
 from .EMITL2ARFLNetCDF import EMITL2ARFLNetCDF
 from .EMITL2AMASKNetCDF import EMITL2AMASKNetCDF
@@ -10,7 +13,7 @@ from .EMITL2ARFLUNCERTNetCDF import EMITL2ARFLUNCERTNetCDF
 from .constants import QUALITY_BANDS
 from .read_qmask import read_qmask
 from .emit_ortho_raster import emit_ortho_raster
-from rasters import Raster, RasterGeometry, RasterGeolocation, RasterGrid
+
 from .GLT import GeometryLookupTable
 from .read_netcdf_raster import read_netcdf_raster
 from .read_geolocation import read_geolocation
@@ -68,13 +71,35 @@ class EMITL2ARFLGranule:
 
     def quality_mask(
             self, 
-            window: Window = None,
-            quality_bands: List[int] = QUALITY_BANDS) -> np.ndarray:
+            swath_window: Window = None,
+            geometry: RasterGeometry = None,
+            quality_bands: List[int] = QUALITY_BANDS) -> Union[Raster, np.ndarray]:
+        granule_geolocation = read_geolocation(filename=self.reflectance_filename)
+        
+        if swath_window is None and geometry is not None:
+            swath_window = granule_geolocation.window(geometry)
+            subset_geolocation = granule_geolocation[swath_window]
+
+        if geometry is None and swath_window is not None:
+            subset_geolocation = granule_geolocation[swath_window]
+
+        if geometry is None and swath_window is None:
+            subset_geolocation = granule_geolocation
+
         qmask: np.ndarray = read_qmask(
             filename=self.mask_filename,
-            window=window,
+            window=swath_window,
             quality_bands=quality_bands
         )
+        
+        qmask = Raster(qmask, geometry=subset_geolocation)
+        
+        if geometry is not None:
+            # qmask = Raster(qmask, geometry=subset_geolocation)
+            qmask = qmask.to_geometry(geometry)
+            
+        qmask = rt.where(np.isnan(qmask), 0, qmask)
+        qmask = qmask.astype(bool)
         
         return qmask
 
@@ -82,16 +107,17 @@ class EMITL2ARFLGranule:
             self, 
             geometry: RasterGeometry = None,
             swath_window: Window = None,
-            qmask: np.ndarray = None) -> Raster:
+            qmask: np.ndarray = None,
+            filter_clouds: bool = True) -> Raster:
             # If a window is not provided but a geometry is, compute the window from the geometry
         if swath_window is None and geometry is not None:
             # read the scene geolocation
             geolocation = read_geolocation(filename=self.reflectance_filename)
+            # calculate the indices window that covers the target geometry
+            swath_window = geolocation.window(geometry)
 
-        # calculate the indices window that covers the target geometry
-        swath_window = geolocation.window(geometry)
-
-        qmask = self.quality_mask(window=swath_window)
+        if filter_clouds:
+            qmask: Raster = self.quality_mask(swath_window=swath_window)
 
         result = read_netcdf_raster(
             filename=self.reflectance_filename,
@@ -100,6 +126,16 @@ class EMITL2ARFLGranule:
             swath_window=swath_window,
             qmask=qmask
         )
+        
+        if filter_clouds:
+            qmask = rt.where(np.isnan(qmask), 0, qmask)
+            qmask = qmask.astype(int)
+            qmask.nodata = 0
+            qmask = qmask.to_geometry(result.geometry)
+            qmask = qmask.reshape(1, *qmask.shape)
+            qmask = qmask.astype(bool)
+            qmask = ~qmask
+            result = result.mask(qmask)
 
         return result
     

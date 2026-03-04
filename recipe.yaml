@@ -1,0 +1,73 @@
+context:
+  name: emitl2arfl
+  version: "1.0.1"
+
+package:
+  name: ${{ name|lower }}
+  version: ${{ version }}
+
+source:
+  # For initial conda-forge submission, use PyPI source
+  url: https://pypi.io/packages/source/${{ name[0] }}/${{ name }}/${{ name }}-${{ version }}.tar.gz
+  
+  # Alternative: use git source for development or if not on PyPI
+  # git_url: https://github.com/STARS-Data-Fusion/EMIT-L2A-RFL.git
+  # git_rev: v${{ version }}
+
+build:
+  # noarch: python means package works on any platform
+  noarch: python
+  number: 0
+  script: ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python >=3.10
+    - pip
+    - setuptools >=60
+    - setuptools-scm >=8.0
+    - wheel
+  
+  run:
+    - python >=3.10
+    - affine
+    - colored-logging
+    - earthaccess
+    - geopandas
+    - h5py >=3.0
+    - netcdf4 >=1.6.0
+    - python-dateutil
+    - rasters >=1.16.1
+    - rioxarray
+    - spectral
+    - xarray
+    - dask
+
+tests:
+  - python:
+      imports:
+        - EMITL2ARFL
+        - EMITL2ARFL.emit_xarray
+        - EMITL2ARFL.EMITL2ARFL
+  
+  - script:
+      - python -c "from EMITL2ARFL import __version__; print(__version__)"
+
+about:
+  homepage: https://github.com/STARS-Data-Fusion/EMITL2ARFL
+  license: Apache-2.0
+  license_file: LICENSE
+  summary: EMIT L2A Estimated Surface Reflectance and Uncertainty and Masks 60 m Search and Download Utility
+  description: |
+    EMITL2ARFL is a Python package for searching, downloading, and processing 
+    NASA EMIT (Earth Surface Mineral Dust Source Investigation) L2A surface 
+    reflectance data. The package provides utilities for working with EMIT 
+    NetCDF files, applying quality masks, handling geometric transformations, 
+    and generating time series data.
+  dev_url: https://github.com/STARS-Data-Fusion/EMITL2ARFL
+  doc_url: https://github.com/STARS-Data-Fusion/EMITL2ARFL/blob/main/README.md
+
+extra:
+  recipe-maintainers:
+    - halverso
+    # Add other GitHub usernames of maintainers here

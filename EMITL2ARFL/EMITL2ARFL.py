@@ -1,5 +1,6 @@
 from .apply_geometry_lookup_table import *
 from .constants import *
+from .diagnose_netcdf_issues import *
 from .emit_ortho_raster import *
 from .emit_xarray import *
 from .EMITL2AMASKNetCDF import *
@@ -9,6 +10,7 @@ from .EMITL2ARFLUNCERTNetCDF import *
 from .EMITNetCDF import *
 from .extract_GLT import *
 from .extract_GLT_array import *
+from .file_utils import *
 from .find_EMIT_L2A_RFL_granule import *
 from .generate_earthaccess_query import *
 from .generate_EMIT_L2A_RFL_timeseries import *
@@ -28,4 +30,5 @@ from .search_earthaccess_granules import *
 from .show_netcdf_tree import *
 from .spatially_constrain_earthaccess_query import *
 from .temporally_constrain_earthaccess_query import *
+from .validate_NetCDF_file import *
 from .version import __version__

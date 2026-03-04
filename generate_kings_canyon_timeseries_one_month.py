@@ -21,9 +21,9 @@ from EMITL2ARFL import *
 
 # Configuration parameters
 start_date_UTC = "2022-08-01"
-end_date_UTC = "2025-11-20"
+end_date_UTC = "2022-08-30"
 download_directory = "/tmp/EMIT_download"
-output_directory = "~/data/Kings Canyon EMIT"
+output_directory = "~/data/Kings_Canyon_EMIT"
 
 # Load Upper Kings area of interest
 logger.info("Loading Upper Kings area of interest...")

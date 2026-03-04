@@ -19,7 +19,8 @@ dependencies = [
     "colored-logging",
     "earthaccess",
     "geopandas",
-    "netCDF4",
+    "h5py>=3.0",
+    "netCDF4>=1.6.0",
     "python-dateutil",
     "rasters>=1.16.1",
     "rioxarray",
@@ -40,12 +41,15 @@ dev = [
     "twine"
 ]
 
-[tool.setuptools.package-data]
-EMITL2ARFL = ["*.txt"]
-
 [project.urls]
 "Homepage" = "https://github.com/STARS-Data-Fusion/EMITL2ARFL"
 
 [tool.setuptools.packages.find]
 include = ["EMITL2ARFL"]
 exclude = ["data", "build", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

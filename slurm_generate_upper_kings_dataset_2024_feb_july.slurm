@@ -14,6 +14,9 @@
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate EMITL2ARFL
 
+# Critical for HPC/network filesystems when reading NetCDF/HDF5 files
+export HDF5_USE_FILE_LOCKING=FALSE
+
 # Navigate to project directory
 cd $HOME/data/EMIT-L2A-RFL
 

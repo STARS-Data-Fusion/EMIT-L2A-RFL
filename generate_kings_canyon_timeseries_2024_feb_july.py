@@ -6,8 +6,14 @@ area of interest over a specified date range and generates a time series of
 reflectance data.
 """
 
+import os
 import logging
 from os.path import join
+
+# Ensure this is set before importing packages that may load netCDF4/HDF5.
+os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
+from EMITL2ARFL import *
 
 import earthaccess
 import geopandas as gpd
@@ -15,8 +21,6 @@ import matplotlib.pyplot as plt
 import rasters as rt
 
 import colored_logging as cl
-
-from EMITL2ARFL import *
 
 
 # Configuration parameters

@@ -6,8 +6,14 @@ area of interest over a specified date range and generates a time series of
 reflectance data.
 """
 
+import os
 import logging
 from os.path import join
+
+# Ensure this is set before importing packages that may load netCDF4/HDF5.
+os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
+from EMITL2ARFL import *
 
 import earthaccess
 import geopandas as gpd
@@ -16,18 +22,16 @@ import rasters as rt
 
 import colored_logging as cl
 
-from EMITL2ARFL import *
-
 
 # Configuration parameters
 start_date_UTC = "2022-08-01"
 end_date_UTC = "2025-11-20"
 download_directory = "/tmp/EMIT_download"
-output_directory = "~/data/Kings Canyon EMIT"
+output_directory = "~/data/Kings_Canyon_EMIT"
 
 # Load Upper Kings area of interest
 logger.info("Loading Upper Kings area of interest...")
-gdf = gpd.read_file("upper_kings.kml")
+gdf = gpd.read_file("arrow_peak.geojson")
 logger.info(f"Loaded geometry: {gdf.geometry[0]}")
 
 # Create UTM bounding box and raster grid

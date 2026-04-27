@@ -24,8 +24,8 @@ import colored_logging as cl
 
 
 # Configuration parameters
-start_date_UTC = "2022-08-01"
-end_date_UTC = "2025-11-20"
+start_date_UTC = "2024-02-01"
+end_date_UTC = "2024-08-01"
 download_directory = "/tmp/EMIT_download"
 output_directory = "~/data/Kings_Canyon_EMIT"
 

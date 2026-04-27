@@ -70,6 +70,61 @@ This means:
 
 Future versions of this package may support server-side subsetting via OGC Web Coverage Service (WCS) endpoints or cloud-native data formats (Zarr, Cloud-Optimized GeoTIFF) if such capabilities become available through NASA LPDAAC.
 
+## Future Work: Server-Side Subsetting
+
+Several promising approaches could enable efficient remote subsetting without downloading full granules:
+
+### 1. HTTP Range Requests with Kerchunk (Most Feasible)
+Use the `kerchunk` library to create virtual Zarr indices of remote NetCDF files, allowing byte-range requests for specific data chunks. This approach:
+- Requires no infrastructure changes at NASA LPDAAC
+- Leverages existing `earthaccess` authentication
+- Downloads only the bytes needed for the requested subset
+- Works immediately if EMIT data servers support HTTP Range requests (standard for most NASA data systems)
+
+**Implementation**: Add optional `use_remote=True` parameter to retrieval functions that bypasses full download in favor of remote chunked access.
+
+### 2. OGC Web Coverage Service (WCS)
+If NASA LPDAAC exposes WCS endpoints for EMIT data, the package could:
+- Submit server-side subsetting requests with geometry parameters
+- Receive pre-subset data directly from the server
+- Reduce bandwidth by orders of magnitude for small AOIs
+
+**Implementation**: Create `retrieve_via_wcs.py` module using `owslib` library to construct and execute WCS GetCoverage requests.
+
+### 3. Cloud-Native Data Formats
+If EMIT data becomes available in cloud-optimized formats:
+- **Zarr**: Native chunked format with efficient remote access via `xarray` and `fsspec`
+- **Cloud-Optimized GeoTIFF (COG)**: GDAL can read remote tiles via HTTP Range requests
+- Both formats enable subsetting at the storage level without custom protocols
+
+**Implementation**: Add format detection and route requests to appropriate readers based on available data sources.
+
+### 4. OpenDAP Protocol
+If EMIT granules are served via OpenDAP (OPeNDAP) servers:
+- Use `xarray.open_dataset()` with constraint expressions
+- Request subsets by coordinate ranges directly in the URL
+- Standard protocol supported across NASA data centers
+
+**Implementation**: Modify `retrieve_EMIT_L2A_RFL_granule()` to accept OpenDAP URLs and use `xarray` remote access instead of download.
+
+### 5. Enhanced Earthaccess Integration
+Monitor and contribute to the `earthaccess` library for:
+- Native subsetting support in `earthaccess.download()`
+- Automatic detection and utilization of OGC services
+- Chunked download capabilities for large files
+
+**Community involvement**: File feature requests and collaborate with earthaccess maintainers on subsetting capabilities.
+
+### Development Priority
+
+The **HTTP Range + Kerchunk approach** (Option 1) is recommended as the first implementation target because:
+- It has the fewest external dependencies
+- No waiting for NASA infrastructure changes
+- Can be implemented and tested immediately
+- Provides graceful fallback to full download if Range requests are unavailable
+
+Contributions and pull requests implementing any of these approaches are welcome!
+
 ## Diagnostics
 
 Diagnostic tools and troubleshooting guides are available in the [diagnostics/](diagnostics/) folder:

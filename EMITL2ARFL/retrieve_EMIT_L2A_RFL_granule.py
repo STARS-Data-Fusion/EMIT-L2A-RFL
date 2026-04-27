@@ -16,6 +16,15 @@ from .file_utils import safe_file_remove, wait_for_file_stability
 
 logger = logging.getLogger(__name__)
 
+
+def _is_environment_validation_issue(error: Exception) -> bool:
+    """Return True when validation error indicates local netCDF/HDF5 runtime problems."""
+    message = str(error).lower()
+    return (
+        "local netcdf4/hdf5 environment issue" in message
+        or "appears to be valid hdf5, but netcdf4 cannot open it" in message
+    )
+
 def retrieve_EMIT_L2A_RFL_granule(
         remote_granule: earthaccess.search.DataGranule = None,
         orbit: int = None,
@@ -134,6 +143,13 @@ def retrieve_EMIT_L2A_RFL_granule(
                 validate_NetCDF_file(filepath, file_type=file_type)
                 logger.info(f"Cached file validated successfully: {filepath}")
             except NetCDFValidationError as e:
+                if _is_environment_validation_issue(e):
+                    raise RuntimeError(
+                        "NetCDF validation failed due to local netCDF4/HDF5 environment issues. "
+                        "Re-downloading will not fix this. "
+                        "Ensure HDF5_USE_FILE_LOCKING=FALSE is set before Python starts and verify netCDF4/HDF5 compatibility. "
+                        f"Underlying error: {e}"
+                    ) from e
                 logger.warning(f"Cached file validation failed: {e}")
                 # Remove corrupted cached file immediately to force re-download
                 if exists(filepath):
@@ -191,6 +207,13 @@ def retrieve_EMIT_L2A_RFL_granule(
                     validate_NetCDF_file(filepath, file_type=file_type)
                     logger.info(f"Downloaded file validated successfully: {filepath}")
                 except NetCDFValidationError as e:
+                    if _is_environment_validation_issue(e):
+                        raise RuntimeError(
+                            "NetCDF validation failed due to local netCDF4/HDF5 environment issues after download. "
+                            "Re-downloading will not fix this. "
+                            "Ensure HDF5_USE_FILE_LOCKING=FALSE is set before Python starts and verify netCDF4/HDF5 compatibility. "
+                            f"Underlying error: {e}"
+                        ) from e
                     logger.warning(f"Validation failed after download attempt: {e}")
                     # File still corrupted after download - remove it for next retry
                     if exists(filepath):

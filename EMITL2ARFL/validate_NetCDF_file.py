@@ -1,6 +1,8 @@
+import os
 from os.path import expanduser, abspath, exists
 
 import netCDF4
+import h5py
 import hashlib
 from pathlib import Path
 from typing import Union
@@ -106,6 +108,25 @@ def validate_NetCDF_file(filename: Union[str, Path], file_type: str = "NetCDF", 
         
         # Check for specific HDF/NetCDF error codes
         if "errno -101" in error_str or "hdf error" in error_msg:
+            # Distinguish true corruption from local netCDF4/HDF5 runtime issues.
+            # Some HPC environments can read HDF5 with h5py while netCDF4 fails with -101.
+            h5py_can_open = False
+            try:
+                with h5py.File(filename_absolute, "r") as _:
+                    h5py_can_open = True
+            except Exception:
+                h5py_can_open = False
+
+            if h5py_can_open:
+                file_locking = os.environ.get("HDF5_USE_FILE_LOCKING", "<not set>")
+                raise NetCDFReadError(
+                    f"{file_type} file appears to be valid HDF5, but netCDF4 cannot open it: {filename}. "
+                    f"File size: {file_size} bytes. netCDF4 error: {e}. "
+                    f"This suggests a local netCDF4/HDF5 environment issue (not download corruption). "
+                    f"Check HDF5/netCDF library compatibility and ensure HDF5_USE_FILE_LOCKING=FALSE is set before Python starts "
+                    f"(current: {file_locking})."
+                )
+
             raise NetCDFReadError(
                 f"{file_type} file has HDF/NetCDF format errors (possibly corrupted during download): {filename}. "
                 f"File size: {file_size} bytes. Error: {e}. "

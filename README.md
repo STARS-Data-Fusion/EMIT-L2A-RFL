@@ -2,9 +2,11 @@
 
 This Python package is a tool for searching, downloading, and reading hypspectral surface reflectance from the Earth Surface Mineral Dust Source Investigation (EMIT) L2A RFL data product.
 
+<!-- 
 Gregory H. Halverson (they/them)<br>
 [gregory.h.halverson@jpl.nasa.gov](mailto:gregory.h.halverson@jpl.nasa.gov)<br>
 NASA Jet Propulsion Laboratory 329G<br>
+-->
 
 ## Installation
 
